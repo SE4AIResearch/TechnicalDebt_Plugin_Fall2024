@@ -1,4 +1,4 @@
-package com.github.konstantinos157.technicaldebtpluginfall2024
+package com.github.SE4AIResearch.technicaldebt_plugin_fall2024
 
 import com.intellij.ide.highlighter.XmlFileType
 import com.intellij.openapi.components.service
@@ -6,7 +6,7 @@ import com.intellij.psi.xml.XmlFile
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.PsiErrorElementUtil
-import com.github.konstantinos157.technicaldebtpluginfall2024.services.MyProjectService
+import com.github.SE4AIResearch.technicaldebt_plugin_fall2024.services.MyProjectService
 
 @TestDataPath("\$CONTENT_ROOT/src/test/testData")
 class MyPluginTest : BasePlatformTestCase() {
