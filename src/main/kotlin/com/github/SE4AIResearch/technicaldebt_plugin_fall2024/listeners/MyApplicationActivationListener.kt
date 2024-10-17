@@ -1,4 +1,4 @@
-package com.github.konstantinos157.technicaldebtpluginfall2024.listeners
+package com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners
 
 import com.intellij.openapi.application.ApplicationActivationListener
 import com.intellij.openapi.diagnostic.thisLogger
