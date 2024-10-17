@@ -1,4 +1,4 @@
-package com.github.konstantinos157.technicaldebtpluginfall2024
+package com.github.SE4AIResearch.technicaldebt_plugin_fall2024
 
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.NonNls
