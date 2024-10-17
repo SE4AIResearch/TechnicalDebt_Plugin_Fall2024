@@ -1,4 +1,4 @@
-package com.github.konstantinos157.technicaldebtpluginfall2024.toolWindow
+package com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
@@ -8,8 +8,8 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
-import com.github.konstantinos157.technicaldebtpluginfall2024.MyBundle
-import com.github.konstantinos157.technicaldebtpluginfall2024.services.MyProjectService
+import com.github.SE4AIResearch.technicaldebt_plugin_fall2024.MyBundle
+import com.github.SE4AIResearch.technicaldebt_plugin_fall2024.MyProjectService
 import javax.swing.JButton
 
 
