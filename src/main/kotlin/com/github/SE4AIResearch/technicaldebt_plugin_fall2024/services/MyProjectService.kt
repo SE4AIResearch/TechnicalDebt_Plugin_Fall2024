@@ -1,9 +1,9 @@
-package com.github.konstantinos157.technicaldebtpluginfall2024.services
+package com.github.SE4AIResearch.technicaldebt_plugin_fall2024.services
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
-import com.github.konstantinos157.technicaldebtpluginfall2024.MyBundle
+import com.github.SE4AIResearch.technicaldebt_plugin_fall2024.MyBundle
 
 @Service(Service.Level.PROJECT)
 class MyProjectService(project: Project) {
