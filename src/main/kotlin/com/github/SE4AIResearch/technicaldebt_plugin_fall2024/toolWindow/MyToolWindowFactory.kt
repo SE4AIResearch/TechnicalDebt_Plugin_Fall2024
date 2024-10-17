@@ -9,7 +9,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
 import com.github.SE4AIResearch.technicaldebt_plugin_fall2024.MyBundle
-import com.github.SE4AIResearch.technicaldebt_plugin_fall2024.MyProjectService
+import com.github.SE4AIResearch.technicaldebt_plugin_fall2024.services.MyProjectService
 import javax.swing.JButton
 
 
