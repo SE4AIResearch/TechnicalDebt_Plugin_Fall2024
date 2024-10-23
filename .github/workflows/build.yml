@@ -51,10 +51,13 @@ jobs:
           distribution: zulu
           java-version: 17
 
+      #Update Gradle Properties
+      - name: Set Gradlew Permissions
+        run: chmod +x ./gradlew
+
       # Setup Gradle
       - name: Setup Gradle
-        uses: chmod +x ./gradlew
-              gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v4
 
       # Set environment variables
       - name: Export Properties
@@ -112,10 +115,13 @@ jobs:
           distribution: zulu
           java-version: 17
 
+      #Update Gradle Properties
+      - name: Set Gradlew Permissions
+        run: chmod +x ./gradlew
+
       # Setup Gradle
       - name: Setup Gradle
-        uses: chmod +x ./gradlew
-              gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v4
 
       # Run tests
       - name: Run Tests
@@ -198,10 +204,13 @@ jobs:
           distribution: zulu
           java-version: 17
 
+      #Update Gradle Properties
+      - name: Set Gradlew Permissions
+        run: chmod +x ./gradlew
+
       # Setup Gradle
       - name: Setup Gradle
-        uses: chmod +x ./gradlew
-              gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v4
 
       # Cache Plugin Verifier IDEs
       - name: Setup Plugin Verifier IDEs Cache
