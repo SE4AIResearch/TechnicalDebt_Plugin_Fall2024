@@ -1,7 +1,7 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <id>com.github.SE4AIResearch.technicaldebt_plugin_fall2024</id>
-    <name>TechnicalDebt Plugin Fall2024</name>
+    <name>Technical Debt Tool</name>
     <vendor>SE4AIResearch</vendor>
 
     <depends>com.intellij.modules.platform</depends>
