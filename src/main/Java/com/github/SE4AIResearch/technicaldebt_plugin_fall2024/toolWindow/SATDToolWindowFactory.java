@@ -1,30 +1,33 @@
-package com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
 public class SATDToolWindowFactory {
 
     public static void main(String[] args) {
-        // Create and show the GUI in a standalone application
         JFrame frame = new JFrame("SATD Tool Window");
         JPanel toolWindowPanel = new JPanel();
-        toolWindowPanel.setLayout(new BoxLayout(toolWindowPanel, BoxLayout.Y_AXIS));
+        toolWindowPanel.setLayout(new BoxLayout(toolWindowPanel, BoxLayout.Y_AXIS)); // Set vertical layout for new lines
+
         JLabel label = new JLabel("Connecting to SATD database...");
         toolWindowPanel.add(label);
 
-        frame.add(toolWindowPanel);
+        JScrollPane scrollPane = new JScrollPane(toolWindowPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS); // Always show vertical scroll bar
+
+        frame.add(scrollPane);
+
         frame.setSize(400, 200);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
 
-        // Perform the database connection in a separate method
         connectToDatabase(toolWindowPanel, label);
     }
 
@@ -37,17 +40,16 @@ public class SATDToolWindowFactory {
         }
         try {
             // Establish a connection to the MySQL database
-            //TODO: make URL, user, and password not hardcoded
             String url = "jdbc:mysql://localhost:3306/satd"; // Update with your database name
             String user = "root"; // Replace with your MySQL username
-            String password = "1Sow74902hope"; // Replace with your MySQL password
+            String password = "Srasg256"; // Replace with your MySQL password
             
             Connection conn = DriverManager.getConnection(url, user, password);
             label.setText("Connection successful!");
 
             // Create a statement and execute a simple query
             Statement stmt = conn.createStatement();
-            String query = "SELECT * FROM SATDInFile"; // Example query
+            String query = "SELECT * FROM satd.SATDInFile"; // Example query
             ResultSet rs = stmt.executeQuery(query);
 
             // Displaying query results
