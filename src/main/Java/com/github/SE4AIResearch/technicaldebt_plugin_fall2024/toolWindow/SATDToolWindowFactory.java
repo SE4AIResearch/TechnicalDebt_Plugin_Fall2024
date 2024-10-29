@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
-
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -15,6 +15,7 @@ public class SATDToolWindowFactory {
         // Create and show the GUI in a standalone application
         JFrame frame = new JFrame("SATD Tool Window");
         JPanel toolWindowPanel = new JPanel();
+        toolWindowPanel.setLayout(new BoxLayout(toolWindowPanel, BoxLayout.Y_AXIS));
         JLabel label = new JLabel("Connecting to SATD database...");
         toolWindowPanel.add(label);
 
