@@ -27,6 +27,11 @@ repositories {
     intellijPlatform {
         defaultRepositories()
     }
+
+    flatDir{
+        dirs("lib")
+    }
+
 }
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
@@ -48,6 +53,8 @@ dependencies {
         zipSigner()
         testFramework(TestFrameworkType.Platform)
     }
+
+    implementation("mysql:mysql-connector-j:9.1.0")
 }
 
 // Configure IntelliJ Platform Gradle Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html
