@@ -1,18 +1,26 @@
+package com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import com.intellij.openapi.project.DumbAware;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.ui.content.Content;
+import com.intellij.ui.content.ContentFactory;
+import org.jetbrains.annotations.NotNull;
 import javax.swing.BoxLayout;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-public class SATDToolWindowFactory {
+public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("SATD Tool Window");
+    @Override
+    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         JPanel toolWindowPanel = new JPanel();
         toolWindowPanel.setLayout(new BoxLayout(toolWindowPanel, BoxLayout.Y_AXIS)); // Set vertical layout for new lines
 
@@ -21,14 +29,16 @@ public class SATDToolWindowFactory {
 
         JScrollPane scrollPane = new JScrollPane(toolWindowPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS); // Always show vertical scroll bar
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-        frame.add(scrollPane);
-
-        frame.setSize(400, 200);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
+        //TODO: Get working Scrollbar
 
         connectToDatabase(toolWindowPanel, label);
+
+        //Adds our panel to Intellij's content factory
+        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        Content content = contentFactory.createContent(toolWindowPanel, "", false);
+        toolWindow.getContentManager().addContent(content);
     }
 
     public static void connectToDatabase(JPanel toolWindowPanel, JLabel label) {
@@ -42,7 +52,7 @@ public class SATDToolWindowFactory {
             // Establish a connection to the MySQL database
             String url = "jdbc:mysql://localhost:3306/satd"; // Update with your database name
             String user = "root"; // Replace with your MySQL username
-            String password = "Srasg256"; // Replace with your MySQL password
+            String password = "1Sow74902hope"; // Replace with your MySQL password
             
             Connection conn = DriverManager.getConnection(url, user, password);
             label.setText("Connection successful!");
