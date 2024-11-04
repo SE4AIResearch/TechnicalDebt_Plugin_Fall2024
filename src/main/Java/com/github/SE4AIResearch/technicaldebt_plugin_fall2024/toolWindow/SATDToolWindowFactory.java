@@ -5,6 +5,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
@@ -13,13 +16,9 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
-
-import javax.swing.*;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
 
 public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
@@ -41,10 +40,11 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // Disable auto-resizing for better control
 
         // Set preferred widths for the columns
-        TableColumn column1 = table.getColumnModel().getColumn(0);
-        TableColumn column2 = table.getColumnModel().getColumn(1);
-        column1.setPreferredWidth(100);
-        column2.setPreferredWidth(500);
+        table.getColumnModel().getColumn(0).setPreferredWidth(100); // Comment Number
+        table.getColumnModel().getColumn(1).setPreferredWidth(500); // Comment
+
+        // Set custom renderer for the "Comment" column to allow text wrapping
+        table.getColumnModel().getColumn(1).setCellRenderer(new TextAreaRenderer());
 
         // Create the scroll pane and add the table
         JBScrollPane scrollPane = new JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -92,6 +92,36 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
             conn.close();
         } catch (Exception e) {
             label.setText("Connection failed: " + e.getMessage());
+        }
+    }
+
+    // Custom renderer to wrap text in the "Comment" column
+    static class TextAreaRenderer extends JTextArea implements TableCellRenderer {
+        public TextAreaRenderer() {
+            setLineWrap(true);
+            setWrapStyleWord(true);
+            setOpaque(true); // So it paints the background correctly
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            setText(value != null ? value.toString() : "");
+            setSize(table.getColumnModel().getColumn(column).getWidth(), getPreferredSize().height);
+
+            // Adjust row height to fit the wrapped text
+            if (table.getRowHeight(row) != getPreferredSize().height) {
+                table.setRowHeight(row, getPreferredSize().height);
+            }
+
+            // Set background colors based on selection
+            if (isSelected) {
+                setBackground(table.getSelectionBackground());
+                setForeground(table.getSelectionForeground());
+            } else {
+                setBackground(table.getBackground());
+                setForeground(table.getForeground());
+            }
+            return this;
         }
     }
 }
