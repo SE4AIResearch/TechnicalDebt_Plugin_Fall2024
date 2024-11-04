@@ -19,6 +19,7 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 
 public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
@@ -37,6 +38,15 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
         // Create the JTable with the model
         JTable table = new JTable(tableModel);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // Disable auto-resizing for better control
+
+        // Set preferred widths for the columns
+        TableColumn column1 = table.getColumnModel().getColumn(0);
+        TableColumn column2 = table.getColumnModel().getColumn(1);
+        column1.setPreferredWidth(100);
+        column2.setPreferredWidth(500);
+
+        // Create the scroll pane and add the table
         JBScrollPane scrollPane = new JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         toolWindowPanel.add(scrollPane, BorderLayout.CENTER);
 
