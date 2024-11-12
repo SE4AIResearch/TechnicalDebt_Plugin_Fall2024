@@ -34,14 +34,33 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         DefaultTableModel tableModel = new DefaultTableModel();
         tableModel.addColumn("Comment Number");
         tableModel.addColumn("Comment");
+        tableModel.addColumn("Comment Type");
+        tableModel.addColumn("Path");
+        tableModel.addColumn("Start Line");
+        tableModel.addColumn("End Line");
+        tableModel.addColumn("Containing Class");
+        tableModel.addColumn("Containing Method");
+        tableModel.addColumn("Method Declaration");
+        tableModel.addColumn("Method Body");
+        tableModel.addColumn("Type");
 
         // Create the JTable with the model
         JTable table = new JTable(tableModel);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // Disable auto-resizing for better control
 
         // Set preferred widths for the columns
-        table.getColumnModel().getColumn(0).setPreferredWidth(100); // Comment Number
+        table.getColumnModel().getColumn(0).setPreferredWidth(110); // Comment Number
         table.getColumnModel().getColumn(1).setPreferredWidth(500); // Comment
+        table.getColumnModel().getColumn(2).setPreferredWidth(100); // Comment Type
+        table.getColumnModel().getColumn(3).setPreferredWidth(100); //Path
+        table.getColumnModel().getColumn(4).setPreferredWidth(100); //Start Line
+        table.getColumnModel().getColumn(5).setPreferredWidth(100); //End Line
+        table.getColumnModel().getColumn(6).setPreferredWidth(100); //Containing Class
+        table.getColumnModel().getColumn(7).setPreferredWidth(100); //Containing Method
+        table.getColumnModel().getColumn(8).setPreferredWidth(100); //Method Declaration
+        table.getColumnModel().getColumn(9).setPreferredWidth(100); //Method Body
+        table.getColumnModel().getColumn(10).setPreferredWidth(100); //Type
+
 
         // Set custom renderer for the "Comment" column to allow text wrapping
         table.getColumnModel().getColumn(1).setCellRenderer(new TextAreaRenderer());
@@ -69,7 +88,7 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
             // Establish a connection to the MySQL database
             String url = "jdbc:mysql://localhost:3306/satd"; // Update with your database name
             String user = "root"; // Replace with your MySQL username
-            String password = "Srasg256"; // Replace with your MySQL password
+            String password = "1Sow74902hope"; // Replace with your MySQL password
 
             Connection conn = DriverManager.getConnection(url, user, password);
             label.setText("Connection successful!");
@@ -83,7 +102,16 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
             int commentNumber = 1; // Initialize comment number
             while (rs.next()) {
                 String f_comment = rs.getString("f_comment"); // Replace with actual column name
-                tableModel.addRow(new Object[]{commentNumber++, f_comment}); // Add new row to the table
+                String f_comment_type = rs.getString("f_comment_type");
+                String f_path = rs.getString("f_path");
+                int start_line = rs.getInt("start_line");
+                int end_line = rs.getInt("end_line");
+                String  containing_class = rs.getString("containing_class");
+                String containing_method = rs.getString("containing_method");
+                String method_declaration = rs.getString("method_declaration");
+                String method_body = rs.getString("method_body");
+                String type = rs.getString("type");
+                tableModel.addRow(new Object[]{commentNumber++, f_comment, f_comment_type, f_path, start_line, end_line, containing_class, containing_method, method_declaration, method_body,type}); // Add new row to the table
             }
 
             // Close resources
