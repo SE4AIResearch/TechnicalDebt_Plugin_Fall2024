@@ -61,6 +61,7 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         table.getColumnModel().getColumn(9).setPreferredWidth(100); //Method Body
         table.getColumnModel().getColumn(10).setPreferredWidth(100); //Type
 
+        table.setEnabled(false);
 
         // Set custom renderer for the "Comment" column to allow text wrapping
         table.getColumnModel().getColumn(1).setCellRenderer(new TextAreaRenderer());
