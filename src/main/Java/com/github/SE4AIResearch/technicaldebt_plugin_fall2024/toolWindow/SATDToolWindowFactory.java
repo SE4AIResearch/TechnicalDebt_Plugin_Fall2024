@@ -8,6 +8,7 @@ import java.sql.Statement;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
@@ -34,36 +35,30 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         DefaultTableModel tableModel = new DefaultTableModel();
         tableModel.addColumn("Comment Number");
         tableModel.addColumn("Comment");
-        tableModel.addColumn("Comment Type");
         tableModel.addColumn("Path");
         tableModel.addColumn("Start Line");
         tableModel.addColumn("End Line");
         tableModel.addColumn("Containing Class");
         tableModel.addColumn("Containing Method");
-        tableModel.addColumn("Method Declaration");
-        tableModel.addColumn("Method Body");
-        tableModel.addColumn("Type");
+        tableModel.addColumn("SATD Type");
 
         // Create the JTable with the model
         JTable table = new JTable(tableModel);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // Disable auto-resizing for better control
 
         // Set preferred widths for the columns
-        table.getColumnModel().getColumn(0).setPreferredWidth(110); // Comment Number
+        table.getColumnModel().getColumn(0); // Comment Number
         table.getColumnModel().getColumn(1).setPreferredWidth(500); // Comment
-        table.getColumnModel().getColumn(2).setPreferredWidth(100); // Comment Type
-        table.getColumnModel().getColumn(3).setPreferredWidth(100); //Path
-        table.getColumnModel().getColumn(4).setPreferredWidth(100); //Start Line
-        table.getColumnModel().getColumn(5).setPreferredWidth(100); //End Line
-        table.getColumnModel().getColumn(6).setPreferredWidth(100); //Containing Class
-        table.getColumnModel().getColumn(7).setPreferredWidth(100); //Containing Method
-        table.getColumnModel().getColumn(8).setPreferredWidth(100); //Method Declaration
-        table.getColumnModel().getColumn(9).setPreferredWidth(100); //Method Body
-        table.getColumnModel().getColumn(10).setPreferredWidth(100); //Type
+        table.getColumnModel().getColumn(2); //Path
+        table.getColumnModel().getColumn(3); //Start Line
+        table.getColumnModel().getColumn(4); //End Line
+        table.getColumnModel().getColumn(5); //Containing Class
+        table.getColumnModel().getColumn(6); //Containing Method
+        table.getColumnModel().getColumn(7); //SATD Type
 
         table.setEnabled(false);
 
-        // Set custom renderer for the "Comment" column to allow text wrapping
+        // Set custom renderer for the columns to allow text wrapping
         table.getColumnModel().getColumn(1).setCellRenderer(new TextAreaRenderer());
 
         // Create the scroll pane and add the table
@@ -71,6 +66,8 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         toolWindowPanel.add(scrollPane, BorderLayout.CENTER);
 
         connectToDatabase(tableModel, label);
+
+        adjustColumnWidths(table);
 
         // Adds our panel to IntelliJ's content factory
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
@@ -103,16 +100,22 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
             int commentNumber = 1; // Initialize comment number
             while (rs.next()) {
                 String f_comment = rs.getString("f_comment"); // Replace with actual column name
-                String f_comment_type = rs.getString("f_comment_type");
                 String f_path = rs.getString("f_path");
                 int start_line = rs.getInt("start_line");
                 int end_line = rs.getInt("end_line");
                 String  containing_class = rs.getString("containing_class");
                 String containing_method = rs.getString("containing_method");
-                String method_declaration = rs.getString("method_declaration");
-                String method_body = rs.getString("method_body");
-                String type = rs.getString("type");
-                tableModel.addRow(new Object[]{commentNumber++, f_comment, f_comment_type, f_path, start_line, end_line, containing_class, containing_method, method_declaration, method_body,type}); // Add new row to the table
+                tableModel.addRow(new Object[]{commentNumber++, f_comment, f_path, start_line, end_line, containing_class, containing_method}); // Add new row to the table
+            }
+
+            query = "SELECT * FROM satd.SATD"; // Example query
+            rs = stmt.executeQuery(query);
+
+            int i = 0;
+            while (rs.next()) {
+                String resolution = rs.getString("resolution");
+                tableModel.setValueAt(resolution, i,7 ); // Add new value to "SATD Type" column
+                i += 1;
             }
 
             // Close resources
@@ -152,5 +155,35 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
             }
             return this;
         }
+    }
+    // Method to adjust column widths dynamically
+    public static void adjustColumnWidths(JTable table) {
+        for (int col = 0; col < table.getColumnCount(); col++) {
+            if((col != 1) && (col != 8) && (col != 9)) {
+                TableColumn column = table.getColumnModel().getColumn(col);
+                int minWidth = getTextWidth(table, column.getHeaderValue().toString(), table.getFont());
+                int maxWidth = minWidth;
+
+                // Iterate through rows to find the maximum width
+                for (int row = 0; row < table.getRowCount(); row++) {
+                    Object value = table.getValueAt(row, col);
+                    if (value != null) {
+                        int cellWidth = getTextWidth(table, value.toString(), table.getFont());
+                        if (cellWidth > maxWidth) {
+                            maxWidth = cellWidth;
+                        }
+                    }
+                }
+                // Set the column width (minimum width as the header's width, preferred as the max width)
+                column.setMinWidth(minWidth + 10); // Adding some padding
+                column.setPreferredWidth(maxWidth + 20); // Adding padding for readability
+            }
+        }
+    }
+
+    // Helper method to calculate the pixel width of a given text with a specific font
+    private static int getTextWidth(JTable table, String text, Font font) {
+        FontMetrics metrics = table.getFontMetrics(font);
+        return metrics.stringWidth(text);
     }
 }
