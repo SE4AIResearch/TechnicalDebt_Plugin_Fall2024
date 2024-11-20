@@ -1,5 +1,8 @@
 package com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow;
 
+
+import com.intellij.openapi.project.Project;
+import java.io.*;
 import java.awt.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -65,7 +68,7 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         JBScrollPane scrollPane = new JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         toolWindowPanel.add(scrollPane, BorderLayout.CENTER);
 
-        connectToDatabase(tableModel, label);
+        initializeAndConnectDatabase(tableModel, label, project);
 
         adjustColumnWidths(table);
 
@@ -75,26 +78,51 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         toolWindow.getContentManager().addContent(content);
     }
 
-    public static void connectToDatabase(DefaultTableModel tableModel, JBLabel label) {
+    public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, Project project) {
+        //Gets the sql filepath from resources
+        String sqlFilePath = "/sql/satd.sql";
+        InputStream inputStream = getClass().getResourceAsStream(sqlFilePath);
+
+        try {
+            if (inputStream == null) {
+                throw new FileNotFoundException("SQL file not found: " + sqlFilePath);
+            }
+        } catch (FileNotFoundException e){
+            label.setText("Connection failed: " + e.getMessage());
+        }
+
+        // Load the MySQL JDBC Driver
         try {
             Class.forName("com.mysql.cj.jdbc.Driver"); // This will throw an exception if the driver is not found
             System.out.println("Driver loaded successfully.");
         } catch (ClassNotFoundException e) {
             System.err.println("MySQL JDBC Driver not found. Check your classpath.");
         }
-        try {
-            // Establish a connection to the MySQL database
-            String url = "jdbc:mysql://localhost:3306/satd"; // Update with your database name
-            String user = "root"; // Replace with your MySQL username
-            String password = "1Sow74902hope"; // Replace with your MySQL password
 
-            Connection conn = DriverManager.getConnection(url, user, password);
+        String url = "jdbc:mysql://localhost:3306/satd";
+        String user = "root";
+        String password = "1Sow74902hope";
+
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/", user, password);
+            Statement stmt = conn.createStatement()) {
+
             label.setText("Connection successful!");
 
-            // Create a statement and execute a simple query
-            Statement stmt = conn.createStatement();
-            String query = "SELECT * FROM satd.SATDInFile"; // Example query
-            ResultSet rs = stmt.executeQuery(query);
+            stmt.execute("CREATE DATABASE IF NOT EXISTS satd");
+            stmt.execute("USE satd");
+
+            // Read and execute the SQL file
+            String sql = new String(inputStream.readAllBytes());
+            String[] queries = sql.split(";");
+
+            for (String query : queries) {
+                if (!query.trim().isEmpty()) {
+                    stmt.execute(query);
+                }
+            }
+
+            String fetchQuery = "SELECT * FROM satd.SATDInFile";
+            ResultSet rs = stmt.executeQuery(fetchQuery);
 
             // Displaying query results
             int commentNumber = 1; // Initialize comment number
@@ -108,8 +136,8 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
                 tableModel.addRow(new Object[]{commentNumber++, f_comment, f_path, start_line, end_line, containing_class, containing_method}); // Add new row to the table
             }
 
-            query = "SELECT * FROM satd.SATD"; // Example query
-            rs = stmt.executeQuery(query);
+            fetchQuery = "SELECT * FROM satd.SATD";
+            rs = stmt.executeQuery(fetchQuery);
 
             int i = 0;
             while (rs.next()) {
