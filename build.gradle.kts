@@ -55,6 +55,7 @@ dependencies {
     }
 
     implementation("mysql:mysql-connector-j:9.1.0")
+    implementation("org.xerial:sqlite-jdbc:3.36.0.3")
 }
 
 // Configure IntelliJ Platform Gradle Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html
@@ -135,6 +136,44 @@ kover {
 tasks {
     wrapper {
         gradleVersion = providers.gradleProperty("gradleVersion").get()
+    }
+
+    runIde {
+        val sandBoxPath = project.buildDir.resolve("idea-sandbox/" + providers.gradleProperty("platformType").get() + "-" + providers.gradleProperty("platformVersion").get() + "/plugins/${project.name}")
+        val dbPath = sandBoxPath.resolve("database")
+        val sqlPath = sandBoxPath.resolve("sql")
+
+        doFirst {
+            if (!(dbPath.exists())) {
+                copy {
+                    from(file("database"))
+                    into(dbPath)
+                }
+            }
+
+            if (!(sqlPath.exists())) {
+                copy {
+                    from(file("sql"))
+                    into(sqlPath)
+                }
+            }
+        }
+    }
+
+    //Exclude the Database and sql file from the jar
+    jar{
+        exclude("Database/**")
+        exclude("sql/**")
+    }
+
+    //Makes sure the plugin build contains these directories
+    buildPlugin{
+        from("Database"){
+            into("Database")
+        }
+        from("sql"){
+            into("sql")
+        }
     }
 
     publishPlugin {
