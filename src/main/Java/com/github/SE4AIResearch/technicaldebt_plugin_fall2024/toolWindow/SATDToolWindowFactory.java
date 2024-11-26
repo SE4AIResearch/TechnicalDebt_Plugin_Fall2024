@@ -1,20 +1,23 @@
 package com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow;
 
-
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.application.PathManager;
 import java.io.*;
 import java.awt.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAware;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
@@ -68,7 +71,18 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         JBScrollPane scrollPane = new JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         toolWindowPanel.add(scrollPane, BorderLayout.CENTER);
 
-        initializeAndConnectDatabase(tableModel, label, project);
+
+        new Task.Backgroundable(project, "Initializing and Connecting Database") {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                try{
+                initializeAndConnectDatabase(tableModel, label, project);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    SwingUtilities.invokeLater(() -> label.setText("Unexpected error: " + e.getMessage()));
+                }
+            }
+        }.queue();
 
         adjustColumnWidths(table);
 
@@ -79,37 +93,32 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
     }
 
     public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, Project project) {
-        //Gets the sql filepath from resources
-        String sqlFilePath = "/sql/satd.sql";
-        InputStream inputStream = getClass().getResourceAsStream(sqlFilePath);
+        //Gets the sql filepath from sql folder
 
+        String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
+        String databasePath =  PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/Database/satd.db";
+
+        InputStream inputStream = null;
         try {
-            if (inputStream == null) {
-                throw new FileNotFoundException("SQL file not found: " + sqlFilePath);
-            }
+            inputStream = new FileInputStream(sqlFilePath);
         } catch (FileNotFoundException e){
-            label.setText("Connection failed: " + e.getMessage());
+            SwingUtilities.invokeLater(() -> label.setText("Connection failed: " + e.getMessage()));
         }
 
         // Load the MySQL JDBC Driver
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver"); // This will throw an exception if the driver is not found
+            Class.forName("org.sqlite.JDBC"); // This will throw an exception if the driver is not found
             System.out.println("Driver loaded successfully.");
         } catch (ClassNotFoundException e) {
-            System.err.println("MySQL JDBC Driver not found. Check your classpath.");
+            SwingUtilities.invokeLater(() -> label.setText("SQLite JDBC Driver not found. Check your classpath."));
         }
 
-        String url = "jdbc:mysql://localhost:3306/satd";
-        String user = "root";
-        String password = "1Sow74902hope";
+        String url = "jdbc:sqlite:" + databasePath;
 
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/", user, password);
+        try (Connection conn = DriverManager.getConnection(url);
             Statement stmt = conn.createStatement()) {
 
-            label.setText("Connection successful!");
-
-            stmt.execute("CREATE DATABASE IF NOT EXISTS satd");
-            stmt.execute("USE satd");
+            SwingUtilities.invokeLater(() -> label.setText("Connection successful!"));
 
             // Read and execute the SQL file
             String sql = new String(inputStream.readAllBytes());
@@ -121,37 +130,57 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
                 }
             }
 
-            String fetchQuery = "SELECT * FROM satd.SATDInFile";
+            String fetchQuery = "SELECT * FROM SATDInFile";
             ResultSet rs = stmt.executeQuery(fetchQuery);
 
+            List<Object[]> tableData = new ArrayList<>();
+
             // Displaying query results
-            int commentNumber = 1; // Initialize comment number
+            int i = 1; // Initialize comment number
             while (rs.next()) {
+                int commentNumber = i;
                 String f_comment = rs.getString("f_comment"); // Replace with actual column name
                 String f_path = rs.getString("f_path");
                 int start_line = rs.getInt("start_line");
                 int end_line = rs.getInt("end_line");
                 String  containing_class = rs.getString("containing_class");
                 String containing_method = rs.getString("containing_method");
-                tableModel.addRow(new Object[]{commentNumber++, f_comment, f_path, start_line, end_line, containing_class, containing_method}); // Add new row to the table
-            }
-
-            fetchQuery = "SELECT * FROM satd.SATD";
-            rs = stmt.executeQuery(fetchQuery);
-
-            int i = 0;
-            while (rs.next()) {
-                String resolution = rs.getString("resolution");
-                tableModel.setValueAt(resolution, i,7 ); // Add new value to "SATD Type" column
+                tableData.add(new Object[]{commentNumber, f_comment, f_path, start_line, end_line, containing_class, containing_method}); // Add new row to the table
                 i += 1;
             }
+
+            SwingUtilities.invokeLater(() -> {
+                for (Object[] tableDatum : tableData) {
+                    tableModel.addRow(tableDatum);
+                }
+            });
+
+
+            fetchQuery = "SELECT * FROM SATD";
+            rs = stmt.executeQuery(fetchQuery);
+
+            List<String> resolutions = new ArrayList<>();
+            //i = 0;
+            while (rs.next()) {
+                //int rowNum = i;
+                //String resolution = rs.getString("resolution");
+                resolutions.add(rs.getString("resolution"));
+                //SwingUtilities.invokeLater(() -> tableModel.setValueAt(resolution, rowNum,7 )); // Add new value to "SATD Type" column
+                //i += 1;
+            }
+
+            SwingUtilities.invokeLater(() ->{
+                for (int j = 0; j < resolutions.size(); j++ ){
+                    tableModel.setValueAt(resolutions.get(j), j, 7);
+                }
+            });
 
             // Close resources
             rs.close();
             stmt.close();
             conn.close();
         } catch (Exception e) {
-            label.setText("Connection failed: " + e.getMessage());
+            SwingUtilities.invokeLater(() -> label.setText("Connection failed: " + e.getMessage()));
         }
     }
 
