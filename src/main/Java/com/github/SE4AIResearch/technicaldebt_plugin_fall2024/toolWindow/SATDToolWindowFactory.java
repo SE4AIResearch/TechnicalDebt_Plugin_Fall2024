@@ -72,7 +72,7 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         toolWindowPanel.add(scrollPane, BorderLayout.CENTER);
 
 
-        new Task.Backgroundable(project, "Initializing and Connecting Database") {
+        new Task.Backgroundable(project, "Initializing and Connecting Database", true) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 try{
@@ -82,7 +82,9 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
                     SwingUtilities.invokeLater(() -> label.setText("Unexpected error: " + e.getMessage()));
                 }
             }
-        }.queue();
+        }
+                .setCancelText("Stop Loading")
+                .queue();
 
         adjustColumnWidths(table);
 
@@ -94,7 +96,6 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
     public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, Project project) {
         //Gets the sql filepath from sql folder
-
         String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
         String databasePath =  PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/Database/satd.db";
 
