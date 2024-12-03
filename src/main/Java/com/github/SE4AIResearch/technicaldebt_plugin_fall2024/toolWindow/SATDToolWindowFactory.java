@@ -8,15 +8,13 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
@@ -31,11 +29,15 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        JPanel toolWindowPanel = new JBPanel();
+        JPanel toolWindowPanel = new JBPanel<>();
         toolWindowPanel.setLayout(new BorderLayout());
 
-        JBLabel label = new JBLabel("Connecting to SATD database...");
+        JBLabel label = new JBLabel("Click the button to connect to SATD database...");
         toolWindowPanel.add(label, BorderLayout.NORTH);
+
+        // Create a button to start the process
+        JButton button = new JButton("Fetch SATD Data");
+        toolWindowPanel.add(button, BorderLayout.SOUTH);
 
         // Create a table model with column names
         DefaultTableModel tableModel = new DefaultTableModel();
@@ -71,20 +73,16 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         JBScrollPane scrollPane = new JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         toolWindowPanel.add(scrollPane, BorderLayout.CENTER);
 
-
-        new Task.Backgroundable(project, "Initializing and Connecting Database", true) {
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                try{
-                initializeAndConnectDatabase(tableModel, label, project);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    SwingUtilities.invokeLater(() -> label.setText("Unexpected error: " + e.getMessage()));
-                }
-            }
-        }
-                .setCancelText("Stop Loading")
-                .queue();
+        // Set button action
+        button.addActionListener(e -> {
+            // Use ProgressManager to show progress while connecting to the database and fetching data
+            ProgressManager.getInstance().runProcessWithProgressSynchronously(
+                    () -> initializeAndConnectDatabase(tableModel, label),
+                    "Fetching SATD Data",
+                    false,
+                    project
+            );
+        });
 
         adjustColumnWidths(table);
 
@@ -94,16 +92,18 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         toolWindow.getContentManager().addContent(content);
     }
 
-    public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, Project project) {
+    public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label) {
         //Gets the sql filepath from sql folder
         String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
         String databasePath =  PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/Database/satd.db";
+
+        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
 
         InputStream inputStream = null;
         try {
             inputStream = new FileInputStream(sqlFilePath);
         } catch (FileNotFoundException e){
-            SwingUtilities.invokeLater(() -> label.setText("Connection failed: " + e.getMessage()));
+            label.setText("Error: " + e.getMessage());
         }
 
         // Load the MySQL JDBC Driver
@@ -111,7 +111,7 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
             Class.forName("org.sqlite.JDBC"); // This will throw an exception if the driver is not found
             System.out.println("Driver loaded successfully.");
         } catch (ClassNotFoundException e) {
-            SwingUtilities.invokeLater(() -> label.setText("SQLite JDBC Driver not found. Check your classpath."));
+            label.setText("SQLite JDBC Driver not found. Check your classpath.");
         }
 
         String url = "jdbc:sqlite:" + databasePath;
@@ -119,7 +119,7 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         try (Connection conn = DriverManager.getConnection(url);
             Statement stmt = conn.createStatement()) {
 
-            SwingUtilities.invokeLater(() -> label.setText("Connection successful!"));
+            label.setText("Connection successful!");
 
             // Read and execute the SQL file
             String sql = new String(inputStream.readAllBytes());
@@ -131,57 +131,49 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
                 }
             }
 
+            // Update progress
+            if (indicator != null) {
+                indicator.setText("Database initialization complete.");
+                indicator.setFraction(0.5);
+            }
+
             String fetchQuery = "SELECT * FROM SATDInFile";
             ResultSet rs = stmt.executeQuery(fetchQuery);
 
-            List<Object[]> tableData = new ArrayList<>();
-
             // Displaying query results
-            int i = 1; // Initialize comment number
+            int commentNumber = 1; // Initialize comment number
             while (rs.next()) {
-                int commentNumber = i;
                 String f_comment = rs.getString("f_comment"); // Replace with actual column name
                 String f_path = rs.getString("f_path");
                 int start_line = rs.getInt("start_line");
                 int end_line = rs.getInt("end_line");
                 String  containing_class = rs.getString("containing_class");
                 String containing_method = rs.getString("containing_method");
-                tableData.add(new Object[]{commentNumber, f_comment, f_path, start_line, end_line, containing_class, containing_method}); // Add new row to the table
-                i += 1;
+                tableModel.addRow(new Object[]{commentNumber++, f_comment, f_path, start_line, end_line, containing_class, containing_method});
             }
-
-            SwingUtilities.invokeLater(() -> {
-                for (Object[] tableDatum : tableData) {
-                    tableModel.addRow(tableDatum);
-                }
-            });
-
 
             fetchQuery = "SELECT * FROM SATD";
             rs = stmt.executeQuery(fetchQuery);
 
-            List<String> resolutions = new ArrayList<>();
-            //i = 0;
+            int i = 0;
             while (rs.next()) {
-                //int rowNum = i;
-                //String resolution = rs.getString("resolution");
-                resolutions.add(rs.getString("resolution"));
-                //SwingUtilities.invokeLater(() -> tableModel.setValueAt(resolution, rowNum,7 )); // Add new value to "SATD Type" column
-                //i += 1;
+                String resolution = rs.getString("resolution");
+                tableModel.setValueAt(resolution, i,7 ); // Add new value to "SATD Type" column
+                i += 1;
             }
 
-            SwingUtilities.invokeLater(() ->{
-                for (int j = 0; j < resolutions.size(); j++ ){
-                    tableModel.setValueAt(resolutions.get(j), j, 7);
-                }
-            });
+            // Update progress
+            if (indicator != null) {
+                indicator.setText("Data fetching complete.");
+                indicator.setFraction(1.0);
+            };
 
             // Close resources
             rs.close();
             stmt.close();
             conn.close();
         } catch (Exception e) {
-            SwingUtilities.invokeLater(() -> label.setText("Connection failed: " + e.getMessage()));
+            label.setText("Connection failed: " + e.getMessage());
         }
     }
 
