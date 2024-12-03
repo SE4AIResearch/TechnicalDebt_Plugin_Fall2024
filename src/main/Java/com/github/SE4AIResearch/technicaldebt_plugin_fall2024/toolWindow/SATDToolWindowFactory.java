@@ -97,15 +97,13 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
         String databasePath =  PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/Database/satd.db";
 
-        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-
         InputStream inputStream = null;
         try {
             inputStream = new FileInputStream(sqlFilePath);
         } catch (FileNotFoundException e){
             label.setText("Error: " + e.getMessage());
         }
-
+        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
         // Load the MySQL JDBC Driver
         try {
             Class.forName("org.sqlite.JDBC"); // This will throw an exception if the driver is not found
