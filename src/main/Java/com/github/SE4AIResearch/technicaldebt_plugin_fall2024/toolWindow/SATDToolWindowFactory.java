@@ -95,7 +95,9 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
     public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label) {
         //Gets the sql filepath from sql folder
         String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
-        String databasePath =  PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/Database/satd.db";
+        String databasePath =  PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/satd.db";
+        String libPath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/";
+        System.out.println(libPath);
 
         InputStream inputStream = null;
         try {
@@ -129,10 +131,40 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
                 }
             }
 
+            //TODO: dynamically get p_name and p_url
+            //stmt.execute("INSERT INTO Projects (p_name, p_url) VALUES ('apache/log4j', 'https://github.com/apache/log4j')");
+
             // Update progress
             if (indicator != null) {
                 indicator.setText("Database initialization complete.");
-                indicator.setFraction(0.5);
+                indicator.setFraction(0.33);
+            }
+
+            try {
+                ProcessBuilder processBuilder = new ProcessBuilder(
+                        "java",
+                        "--add-opens",
+                        "java.base/java.lang=ALL-UNNAMED",
+                        "-jar",
+                        (libPath + "satd-analyzer-jar-with-all-dependencies.jar"),
+                        "-r",
+                        (libPath + "test_repo.csv"),
+                        "-d",
+                        (libPath + "mySQL.properties")
+                );
+
+                Process process = processBuilder.start();
+
+                int exitCode = process.waitFor();
+                System.out.println("Exit code:" + exitCode);
+            } catch(IOException | InterruptedException e){
+                e.printStackTrace();
+            }
+
+            // Update progress
+            if (indicator != null) {
+                indicator.setText("Database up to Date.");
+                indicator.setFraction(0.66);
             }
 
             String fetchQuery = "SELECT * FROM SATDInFile";
@@ -156,7 +188,13 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
             int i = 0;
             while (rs.next()) {
                 String resolution = rs.getString("resolution");
-                tableModel.setValueAt(resolution, i,7 ); // Add new value to "SATD Type" column
+                if(i > commentNumber){
+                    tableModel.addRow(new Object[]{i, null, null, null, null, null, null, resolution});
+                }
+                else {
+                    tableModel.setValueAt(resolution, i, 7); // Add new value to "SATD Type" column
+                }
+
                 i += 1;
             }
 

@@ -27,11 +27,6 @@ repositories {
     intellijPlatform {
         defaultRepositories()
     }
-
-    flatDir{
-        dirs("lib")
-    }
-
 }
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
@@ -54,7 +49,6 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
 
-    implementation("mysql:mysql-connector-j:9.1.0")
     implementation("org.xerial:sqlite-jdbc:3.36.0.3")
 }
 
@@ -140,14 +134,14 @@ tasks {
 
     runIde {
         val sandBoxPath = project.buildDir.resolve("idea-sandbox/" + providers.gradleProperty("platformType").get() + "-" + providers.gradleProperty("platformVersion").get() + "/plugins/${project.name}")
-        val dbPath = sandBoxPath.resolve("database")
+        val libPath = sandBoxPath.resolve("SATDBailiff")
         val sqlPath = sandBoxPath.resolve("sql")
 
         doFirst {
-            if (!(dbPath.exists())) {
+            if (!(libPath.exists())) {
                 copy {
-                    from(file("database"))
-                    into(dbPath)
+                    from(file("SATDBailiff"))
+                    into(libPath)
                 }
             }
 
@@ -162,14 +156,14 @@ tasks {
 
     //Exclude the Database and sql file from the jar
     jar{
-        exclude("Database/**")
+        exclude("SATDBailiff/**")
         exclude("sql/**")
     }
 
     //Makes sure the plugin build contains these directories
     buildPlugin{
-        from("Database"){
-            into("Database")
+        from("SATDBailiff"){
+            into("SATDBailiff")
         }
         from("sql"){
             into("sql")
