@@ -134,6 +134,7 @@ tasks {
 
     runIde {
         val sandBoxPath = project.buildDir.resolve("idea-sandbox/" + providers.gradleProperty("platformType").get() + "-" + providers.gradleProperty("platformVersion").get() + "/plugins/${project.name}")
+        val targetPath = sandBoxPath.resolve("SATDBailiff/target")
         val libPath = sandBoxPath.resolve("SATDBailiff")
         val sqlPath = sandBoxPath.resolve("sql")
 
@@ -142,6 +143,13 @@ tasks {
                 copy {
                     from(file("SATDBailiff"))
                     into(libPath)
+                }
+            }
+
+            if (!(targetPath.exists())) {
+                copy {
+                    from(file("SATDBailiff/target"))
+                    into(targetPath)
                 }
             }
 
@@ -167,6 +175,9 @@ tasks {
         }
         from("sql"){
             into("sql")
+        }
+        from("SATDBailiff/target"){
+            into("SATDBailiff/target")
         }
     }
 

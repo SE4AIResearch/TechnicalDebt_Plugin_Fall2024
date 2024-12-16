@@ -12,6 +12,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableModel;
 
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -77,14 +78,12 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         button.addActionListener(e -> {
             // Use ProgressManager to show progress while connecting to the database and fetching data
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
-                    () -> initializeAndConnectDatabase(tableModel, label),
+                    () -> initializeAndConnectDatabase(tableModel, label, table),
                     "Fetching SATD Data",
                     false,
                     project
             );
         });
-
-        adjustColumnWidths(table);
 
         // Adds our panel to IntelliJ's content factory
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
@@ -92,8 +91,9 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         toolWindow.getContentManager().addContent(content);
     }
 
-    public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label) {
+    public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, JTable table) {
         //Gets the sql filepath from sql folder
+        tableModel.setRowCount(0);
         String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
         String databasePath =  PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/satd.db";
         String libPath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/";
@@ -146,12 +146,15 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
                         "--add-opens",
                         "java.base/java.lang=ALL-UNNAMED",
                         "-jar",
-                        (libPath + "satd-analyzer-jar-with-all-dependencies.jar"),
+                        (libPath + "target/satd-analyzer-jar-with-all-dependencies.jar"),
                         "-r",
                         (libPath + "test_repo.csv"),
                         "-d",
-                        (libPath + "mySQL.properties")
+                        (libPath + "satd.db")
                 );
+
+                processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+                processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
 
                 Process process = processBuilder.start();
 
@@ -197,6 +200,8 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
                 i += 1;
             }
+
+            adjustColumnWidths(table);
 
             // Update progress
             if (indicator != null) {
