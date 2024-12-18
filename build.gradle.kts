@@ -22,10 +22,23 @@ kotlin {
 // Configure project's dependencies
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+    }
+    maven {
+        url = uri("https://plugins.gradle.org/m2/")
+    }
+    maven {
+        url = uri("https://cache-redirector.jetbrains.com/intellij-repository/releases")
+    }
 
     // IntelliJ Platform Gradle Plugin Repositories Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-repositories-extension.html
     intellijPlatform {
         defaultRepositories()
+    }
+
+    flatDir{
+        dirs("lib")
     }
 }
 
@@ -50,6 +63,7 @@ dependencies {
     }
 
     implementation("org.xerial:sqlite-jdbc:3.36.0.3")
+    implementation(files("lib/satd_detector.jar"))
 }
 
 // Configure IntelliJ Platform Gradle Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html
