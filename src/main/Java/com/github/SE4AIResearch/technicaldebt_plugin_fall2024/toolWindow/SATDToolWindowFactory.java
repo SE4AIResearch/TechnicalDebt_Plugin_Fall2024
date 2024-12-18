@@ -170,7 +170,7 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
                 indicator.setFraction(0.66);
             }
 
-            String fetchQuery = "SELECT * FROM SATDInFile";
+            String fetchQuery = "SELECT * FROM SATDnoDups";
             ResultSet rs = stmt.executeQuery(fetchQuery);
 
             // Displaying query results
