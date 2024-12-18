@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS Commits;
 DROP TABLE IF EXISTS SATD;
 DROP TABLE IF EXISTS SATDInFile;
 DROP TABLE IF EXISTS Projects;
+DROP TABLE IF EXISTS SATDnoDups;
 
 CREATE TABLE IF NOT EXISTS Projects (
 	p_id INTEGER NOT NULL,
@@ -11,6 +12,21 @@ CREATE TABLE IF NOT EXISTS Projects (
 );
 
 CREATE TABLE IF NOT EXISTS SATDInFile (
+	f_id INTEGER,
+    f_comment TEXT(4096),
+    f_comment_type TEXT(32),
+    f_path TEXT(512),
+    start_line INT,
+    end_line INT,
+    containing_class TEXT(512),
+    containing_method TEXT(512),
+    method_declaration longtext,
+    method_body longtext,
+    `type` TEXT(45) DEFAULT NULL,
+    PRIMARY KEY (f_id)
+);
+
+CREATE TABLE IF NOT EXISTS SATDnoDups (
 	f_id INTEGER,
     f_comment TEXT(4096),
     f_comment_type TEXT(32),
