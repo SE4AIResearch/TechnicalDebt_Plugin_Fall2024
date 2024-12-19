@@ -22,10 +22,23 @@ kotlin {
 // Configure project's dependencies
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+    }
+    maven {
+        url = uri("https://plugins.gradle.org/m2/")
+    }
+    maven {
+        url = uri("https://cache-redirector.jetbrains.com/intellij-repository/releases")
+    }
 
     // IntelliJ Platform Gradle Plugin Repositories Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-repositories-extension.html
     intellijPlatform {
         defaultRepositories()
+    }
+
+    flatDir{
+        dirs("lib")
     }
 }
 
@@ -48,6 +61,9 @@ dependencies {
         zipSigner()
         testFramework(TestFrameworkType.Platform)
     }
+
+    implementation("org.xerial:sqlite-jdbc:3.36.0.3")
+    implementation(files("lib/satd_detector.jar"))
 }
 
 // Configure IntelliJ Platform Gradle Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html
@@ -128,6 +144,55 @@ kover {
 tasks {
     wrapper {
         gradleVersion = providers.gradleProperty("gradleVersion").get()
+    }
+
+    runIde {
+        val sandBoxPath = project.buildDir.resolve("idea-sandbox/" + providers.gradleProperty("platformType").get() + "-" + providers.gradleProperty("platformVersion").get() + "/plugins/${project.name}")
+        val targetPath = sandBoxPath.resolve("SATDBailiff/target")
+        val libPath = sandBoxPath.resolve("SATDBailiff")
+        val sqlPath = sandBoxPath.resolve("sql")
+
+        doFirst {
+            if (!(libPath.exists())) {
+                copy {
+                    from(file("SATDBailiff"))
+                    into(libPath)
+                }
+            }
+
+            if (!(targetPath.exists())) {
+                copy {
+                    from(file("SATDBailiff/target"))
+                    into(targetPath)
+                }
+            }
+
+            if (!(sqlPath.exists())) {
+                copy {
+                    from(file("sql"))
+                    into(sqlPath)
+                }
+            }
+        }
+    }
+
+    //Exclude the Database and sql file from the jar
+    jar{
+        exclude("SATDBailiff/**")
+        exclude("sql/**")
+    }
+
+    //Makes sure the plugin build contains these directories
+    buildPlugin{
+        from("SATDBailiff"){
+            into("SATDBailiff")
+        }
+        from("sql"){
+            into("sql")
+        }
+        from("SATDBailiff/target"){
+            into("SATDBailiff/target")
+        }
     }
 
     publishPlugin {

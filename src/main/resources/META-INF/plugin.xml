@@ -6,10 +6,18 @@
 
     <depends>com.intellij.modules.platform</depends>
 
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.java</depends>
+
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
+        <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.MyToolWindowFactory" id="MyToolWindow" anchor="bottom"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory" id="SATDToolWindow" anchor="bottom"/>
+        <annotator language="JAVA" implementationClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
     </extensions>
 
     <applicationListeners>
