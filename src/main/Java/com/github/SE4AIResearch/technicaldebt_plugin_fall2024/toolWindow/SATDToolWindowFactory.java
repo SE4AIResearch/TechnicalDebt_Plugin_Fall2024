@@ -1,7 +1,15 @@
 package com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow;
 
+import com.intellij.openapi.editor.CaretModel;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.LogicalPosition;
+import com.intellij.openapi.editor.ScrollType;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.application.PathManager;
+
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.*;
 import java.awt.*;
 import java.sql.Connection;
@@ -17,6 +25,8 @@ import javax.swing.table.TableModel;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.DumbAware;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
@@ -74,6 +84,22 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         JBScrollPane scrollPane = new JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         toolWindowPanel.add(scrollPane, BorderLayout.CENTER);
 
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) { // Double-click to navigate
+
+                    int row = table.rowAtPoint(e.getPoint());
+                    //int column = table.columnAtPoint(e.getPoint());
+                    String path = (String) table.getValueAt(row, 2);
+                    String startLineStr = (String) table.getValueAt(row, 3);
+                    int line = Integer.parseInt(startLineStr);
+                    navigateToCode(project, line, path);
+                }
+            }
+        });
+
+
         // Set button action
         button.addActionListener(e -> {
             // Use ProgressManager to show progress while connecting to the database and fetching data
@@ -89,6 +115,26 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
         Content content = contentFactory.createContent(toolWindowPanel, "", false);
         toolWindow.getContentManager().addContent(content);
+    }
+    private void navigateToCode(Project project, int lineNumber, String path) {
+        VirtualFile file = LocalFileSystem.getInstance().findFileByPath(path);
+        if (file == null) {
+            System.out.println("File not found: " + path);
+            return;
+        }
+        FileEditorManager.getInstance(project).openFile(file, true);
+        Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+        if (editor == null) {
+            System.out.println("No editor is currently open");
+            return;
+        }
+        // Move the caret to the desired line
+        CaretModel caretModel = editor.getCaretModel();
+        if (lineNumber > 0 && lineNumber <= editor.getDocument().getLineCount()) {
+            caretModel.moveToLogicalPosition(new LogicalPosition(lineNumber - 1, 0));
+            //Scroll to the desired line to make it visible
+            editor.getScrollingModel().scrollToCaret(ScrollType.CENTER);
+        }
     }
 
     public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, JTable table) {
