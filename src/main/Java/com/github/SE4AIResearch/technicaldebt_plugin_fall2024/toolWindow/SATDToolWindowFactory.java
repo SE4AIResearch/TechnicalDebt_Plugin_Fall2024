@@ -117,6 +117,8 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         toolWindow.getContentManager().addContent(content);
     }
     private void navigateToCode(Project project, int lineNumber, String path) {
+        String homePath = project.getBasePath();
+        path = homePath + "/" + path;
         VirtualFile file = LocalFileSystem.getInstance().findFileByPath(path);
         if (file == null) {
             System.out.println("File not found: " + path);
