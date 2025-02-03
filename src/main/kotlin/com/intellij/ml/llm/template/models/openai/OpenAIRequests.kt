@@ -6,6 +6,7 @@ import com.intellij.ml.llm.template.models.LLMBaseRequest
 import com.intellij.util.io.HttpRequests
 import java.net.HttpURLConnection
 
+//TODO: implement option for local ai (e.g DeepSeek )
 open class OpenAIBaseRequest<Body>(path: String, body: Body) : LLMBaseRequest<Body>(body) {
     private val url = "https://api.openai.com/v1/$path"
 
@@ -35,11 +36,11 @@ open class OpenAIBaseRequest<Body>(path: String, body: Body) : LLMBaseRequest<Bo
 }
 
 class OpenAIEditRequest(body: OpenAiEditRequestBody) :
-    OpenAIBaseRequest<OpenAiEditRequestBody>("edits", body)
+    OllamaAIRequests<OpenAiEditRequestBody>("edits", body)
 
 class OpenAICompletionRequest(body: OpenAiCompletionRequestBody) :
-    OpenAIBaseRequest<OpenAiCompletionRequestBody>("completions", body)
+    OllamaAIRequests<OpenAiCompletionRequestBody>("completions", body)
 
 class OpenAIChatRequest(body: OpenAiChatRequestBody) :
-    OpenAIBaseRequest<OpenAiChatRequestBody>("chat/completions", body)
+    OllamaAIRequests<OpenAiChatRequestBody>("chat/completions", body)
 
