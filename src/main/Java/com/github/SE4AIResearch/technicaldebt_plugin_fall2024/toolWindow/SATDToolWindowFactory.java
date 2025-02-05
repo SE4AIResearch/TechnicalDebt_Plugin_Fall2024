@@ -251,7 +251,6 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
             fetchQuery = "SELECT * FROM SATD";
             rs = stmt.executeQuery(fetchQuery);
 
-            //TODO: fix this
             int i = 0;
             while (rs.next()) {
                 int satd_id = rs.getInt("satd_id");
