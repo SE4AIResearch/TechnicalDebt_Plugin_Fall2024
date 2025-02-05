@@ -42,6 +42,7 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         JPanel toolWindowPanel = new JBPanel<>();
         toolWindowPanel.setLayout(new BorderLayout());
+        JTabbedPane tabbedPane = new JTabbedPane();
 
         JBLabel label = new JBLabel("Click the button to connect to SATD database...");
         toolWindowPanel.add(label, BorderLayout.NORTH);
@@ -52,14 +53,13 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
         // Create a table model with column names
         DefaultTableModel tableModel = new DefaultTableModel();
-        tableModel.addColumn("Comment Number");
+        tableModel.addColumn("File ID");
         tableModel.addColumn("Comment");
         tableModel.addColumn("Path");
         tableModel.addColumn("Start Line");
         tableModel.addColumn("End Line");
         tableModel.addColumn("Containing Class");
         tableModel.addColumn("Containing Method");
-        tableModel.addColumn("SATD Type");
 
         // Create the JTable with the model
         JTable table = new JTable(tableModel);
@@ -73,16 +73,30 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         table.getColumnModel().getColumn(4); //End Line
         table.getColumnModel().getColumn(5); //Containing Class
         table.getColumnModel().getColumn(6); //Containing Method
-        table.getColumnModel().getColumn(7); //SATD Type
 
+        //Makes it so table cannot be edited
         table.setEnabled(false);
 
         // Set custom renderer for the columns to allow text wrapping
         table.getColumnModel().getColumn(1).setCellRenderer(new TextAreaRenderer());
 
-        // Create the scroll pane and add the table
+        // TEST: Create the scroll pane and add to the tabbed pane
         JBScrollPane scrollPane = new JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        toolWindowPanel.add(scrollPane, BorderLayout.CENTER);
+        tabbedPane.addTab("SATD In File", scrollPane);
+
+        //Create 2nd Table
+        DefaultTableModel tableModel2 = new DefaultTableModel();
+        tableModel2.addColumn("SATD ID");
+        tableModel2.addColumn("First File");
+        tableModel2.addColumn("Second File");
+        tableModel2.addColumn("Resolution");
+        JTable table2 = new JTable(tableModel2);
+        table2.setEnabled((false));
+        JBScrollPane scrollPane2 = new JBScrollPane(table2, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        tabbedPane.addTab("SATD", scrollPane2);
+
+        toolWindowPanel.add(tabbedPane, BorderLayout.CENTER);
 
         table.addMouseListener(new MouseAdapter() {
             @Override
@@ -104,7 +118,7 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         button.addActionListener(e -> {
             // Use ProgressManager to show progress while connecting to the database and fetching data
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
-                    () -> initializeAndConnectDatabase(tableModel, label, table),
+                    () -> initializeAndConnectDatabase(tableModel, label, table, tableModel2, table2),
                     "Fetching SATD Data",
                     false,
                     project
@@ -139,9 +153,10 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         }
     }
 
-    public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, JTable table) {
+    public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, JTable table, DefaultTableModel tableModel2, JTable table2) {
         //Gets the sql filepath from sql folder
         tableModel.setRowCount(0);
+        tableModel2.setRowCount(0);
         String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
         String databasePath =  PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/satd.db";
         String libPath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/";
@@ -218,38 +233,36 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
                 indicator.setFraction(0.66);
             }
 
-            String fetchQuery = "SELECT * FROM SATDnoDups";
+            String fetchQuery = "SELECT * FROM SATDInFile";
             ResultSet rs = stmt.executeQuery(fetchQuery);
 
             // Displaying query results
-            int commentNumber = 1; // Initialize comment number
             while (rs.next()) {
+                int f_id = rs.getInt("f_id");
                 String f_comment = rs.getString("f_comment"); // Replace with actual column name
                 String f_path = rs.getString("f_path");
                 int start_line = rs.getInt("start_line");
                 int end_line = rs.getInt("end_line");
                 String  containing_class = rs.getString("containing_class");
                 String containing_method = rs.getString("containing_method");
-                tableModel.addRow(new Object[]{commentNumber++, f_comment, f_path, start_line, end_line, containing_class, containing_method});
+                tableModel.addRow(new Object[]{f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method});
             }
 
             fetchQuery = "SELECT * FROM SATD";
             rs = stmt.executeQuery(fetchQuery);
 
+            //TODO: fix this
             int i = 0;
             while (rs.next()) {
+                int satd_id = rs.getInt("satd_id");
+                int first_file = rs.getInt("first_file");
+                int second_file = rs.getInt("second_file");
                 String resolution = rs.getString("resolution");
-                if(i > commentNumber){
-                    tableModel.addRow(new Object[]{i, null, null, null, null, null, null, resolution});
-                }
-                else {
-                    tableModel.setValueAt(resolution, i, 7); // Add new value to "SATD Type" column
-                }
-
-                i += 1;
+                tableModel2.addRow(new Object[]{satd_id, first_file, second_file, resolution});
             }
 
             adjustColumnWidths(table);
+            //adjustColumnWidths(table2);
 
             // Update progress
             if (indicator != null) {
