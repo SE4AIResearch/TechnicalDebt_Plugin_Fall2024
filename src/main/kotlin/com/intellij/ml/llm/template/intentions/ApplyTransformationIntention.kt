@@ -2,9 +2,12 @@ package com.intellij.ml.llm.template.intentions
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.ml.llm.template.LLMBundle
-import com.intellij.ml.llm.template.models.CodexRequestProvider
+//import com.intellij.ml.llm.template.models.CodexRequestProvider
+import com.intellij.ml.llm.template.models.GPTRequestProvider
 import com.intellij.ml.llm.template.models.LLMRequestProvider
-import com.intellij.ml.llm.template.models.sendEditRequest
+import com.intellij.ml.llm.template.models.openai.OpenAiChatMessage
+import com.intellij.ml.llm.template.models.sendChatRequest
+//import com.intellij.ml.llm.template.models.sendEditRequest
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
@@ -25,12 +28,12 @@ import com.intellij.psi.util.PsiUtilBase
 
 @Suppress("UnstableApiUsage")
 abstract class ApplyTransformationIntention(
-    private val llmRequestProvider: LLMRequestProvider = CodexRequestProvider
+    private val llmRequestProvider: LLMRequestProvider = GPTRequestProvider
 ) : IntentionAction {
     private val logger = Logger.getInstance("#com.intellij.ml.llm")
 
 
-    fun extractBracketContent(str: String): String {
+    private fun extractBracketContent(str: String): String {
         val sb = StringBuilder()
         var inBracket = false
 
@@ -103,13 +106,35 @@ abstract class ApplyTransformationIntention(
         val task =
             object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
                 override fun run(indicator: ProgressIndicator) {
-                    val response = sendEditRequest(
+
+                    val testMessage = sendChatRequest(
                         project,
-                        text,
-                        instruction,
-                        llmRequestProvider = llmRequestProvider,
+                        listOf(OpenAiChatMessage(role="user", "This is a test. Say the words back to me.")),
+                        model = llmRequestProvider.chatModel,
+                        llmRequestProvider = llmRequestProvider
+                    )
+
+
+                    val messages = listOf(
+                        OpenAiChatMessage(role = "user", content = "[$satdType, fix it]: $text"),
+                    )
+
+                    val response = sendChatRequest(
+                        project,
+                        messages,
+                        model = llmRequestProvider.chatModel,
+                        llmRequestProvider = llmRequestProvider
                     )
                     if (response != null) {
+                        val suggestions = response.getSuggestions()
+                        if (suggestions.isEmpty()) {
+                            logger.warn("No suggestions received for transformation.")
+                        }
+                        else {
+                            for (s in suggestions) {
+                                println(s.text)
+                            }
+                        }
                         response.getSuggestions().firstOrNull()?.let {
                             logger.info("Suggested change: $it")
                             invokeLater {

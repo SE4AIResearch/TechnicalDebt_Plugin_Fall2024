@@ -1,7 +1,8 @@
 package com.intellij.ml.llm.template.models
 
-import com.intellij.ml.llm.template.models.openai.OpenAICompletionRequest
-import com.intellij.ml.llm.template.models.openai.OpenAIEditRequest
+import com.intellij.ml.llm.template.models.openai.OpenAIChatRequest
+//import com.intellij.ml.llm.template.models.openai.OpenAICompletionRequest
+//import com.intellij.ml.llm.template.models.openai.OpenAIEditRequest
 
 data class LLMResponseChoice(val text: String, val finishReason: String?)
 
@@ -14,13 +15,14 @@ abstract class LLMBaseRequest<Body>(val body: Body) {
 }
 
 enum class LLMRequestType {
-    OPENAI_EDIT, OPENAI_COMPLETION, MOCK;
+    OPENAI_CHAT, OPENAI_EDIT, OPENAI_COMPLETION, MOCK;
 
     companion object {
         fun byRequest(request: LLMBaseRequest<*>): LLMRequestType {
             return when (request) {
-                is OpenAIEditRequest -> OPENAI_EDIT
-                is OpenAICompletionRequest -> OPENAI_COMPLETION
+//                is OpenAIEditRequest -> OPENAI_EDIT
+//                is OpenAICompletionRequest -> OPENAI_COMPLETION
+                  is OpenAIChatRequest -> OPENAI_CHAT
                 else -> MOCK
             }
         }
