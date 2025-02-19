@@ -22,6 +22,8 @@ data class OpenAIResponse(
     }
 }
 
+
+
 data class ResponseChoice(
     @SerializedName("text")
     val text: String,

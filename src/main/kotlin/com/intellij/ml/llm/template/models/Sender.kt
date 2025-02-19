@@ -3,10 +3,11 @@
 package com.intellij.ml.llm.template.models
 
 import com.intellij.ml.llm.template.LLMBundle
+import com.intellij.ml.llm.template.models.ollama.OllamaBody
+import com.intellij.ml.llm.template.models.ollama.OllamaRequest
 import com.intellij.ml.llm.template.models.openai.AuthorizationException
 import com.intellij.ml.llm.template.models.openai.OpenAiChatMessage
 import com.intellij.ml.llm.template.models.openai.OpenAiChatRequestBody
-import com.intellij.ml.llm.template.settings.LLMSettingsManager
 import com.intellij.ml.llm.template.showAuthorizationFailedNotification
 import com.intellij.ml.llm.template.showRequestFailedNotification
 import com.intellij.ml.llm.template.showUnauthorizedNotification
@@ -18,64 +19,77 @@ import java.net.HttpURLConnection
 
 private val logger = Logger.getInstance("#com.intellij.ml.llm.template.models")
 
-fun sendEditRequest(
+//fun sendEditRequest(
+//    project: Project,
+//    input: String,
+//    instruction: String,
+//    temperature: Double? = null,
+//    topP: Double? = null,
+//    numberOfSuggestions: Int? = null,
+//    llmRequestProvider: LLMRequestProvider = CodexRequestProvider,
+//): LLMBaseResponse? {
+//    val settings = LLMSettingsManager.getInstance()
+//
+//    val request = llmRequestProvider.createEditRequest(
+//        input = input,
+//        instruction = instruction,
+//        temperature = temperature ?: settings.getTemperature(),
+//        topP = topP ?: settings.getTopP(),
+//        numberOfSuggestions = numberOfSuggestions ?: settings.getNumberOfSamples()
+//    )
+//
+//    return sendRequest(project, request)
+//}
+
+//fun sendCompletionRequest(
+//    project: Project,
+//    input: String,
+//    suffix: String,
+//    maxTokens: Int? = null,
+//    temperature: Double? = null,
+//    presencePenalty: Double? = null,
+//    frequencyPenalty: Double? = null,
+//    topP: Double? = null,
+//    numberOfSuggestions: Int? = null,
+//    llmRequestProvider: LLMRequestProvider = GPTRequestProvider,
+//): LLMBaseResponse? {
+//    val request = llmRequestProvider.createCompletionRequest(
+//        input = input,
+//        suffix = suffix,
+//        maxTokens = maxTokens,
+//        temperature = temperature,
+//        topP = topP,
+//        numberOfSuggestions = numberOfSuggestions,
+//        presencePenalty = presencePenalty,
+//        frequencyPenalty = frequencyPenalty,
+//        logProbs = 1
+//    )
+//
+//    return sendRequest(project, request)
+//}
+
+fun sendOllamaRequest(
     project: Project,
-    input: String,
-    instruction: String,
-    temperature: Double? = null,
-    topP: Double? = null,
-    numberOfSuggestions: Int? = null,
-    llmRequestProvider: LLMRequestProvider = CodexRequestProvider,
+    prompt: String,
+    stream: String,
+    llmRequestProvider: LLMRequestProvider = OllamaRequestProvider,
+
 ): LLMBaseResponse? {
-    val settings = LLMSettingsManager.getInstance()
-
-    val request = llmRequestProvider.createEditRequest(
-        input = input,
-        instruction = instruction,
-        temperature = temperature ?: settings.getTemperature(),
-        topP = topP ?: settings.getTopP(),
-        numberOfSuggestions = numberOfSuggestions ?: settings.getNumberOfSamples()
-    )
-
-    return sendRequest(project, request)
-}
-
-fun sendCompletionRequest(
-    project: Project,
-    input: String,
-    suffix: String,
-    maxTokens: Int? = null,
-    temperature: Double? = null,
-    presencePenalty: Double? = null,
-    frequencyPenalty: Double? = null,
-    topP: Double? = null,
-    numberOfSuggestions: Int? = null,
-    llmRequestProvider: LLMRequestProvider = CodexRequestProvider,
-): LLMBaseResponse? {
-    val request = llmRequestProvider.createCompletionRequest(
-        input = input,
-        suffix = suffix,
-        maxTokens = maxTokens,
-        temperature = temperature,
-        topP = topP,
-        numberOfSuggestions = numberOfSuggestions,
-        presencePenalty = presencePenalty,
-        frequencyPenalty = frequencyPenalty,
-        logProbs = 1
-    )
-
+    val request =
+        llmRequestProvider.createOllamaRequest(OllamaBody("llama2", prompt = prompt, stream = "false"))
     return sendRequest(project, request)
 }
 
 fun sendChatRequest(
     project: Project,
     messages: List<OpenAiChatMessage>,
-    model: String? = null,
-    llmRequestProvider: LLMRequestProvider = CodexRequestProvider
+    model: String,
+    llmRequestProvider: LLMRequestProvider = GPTRequestProvider
 ): LLMBaseResponse? {
-    val request = llmRequestProvider.createChatGPTRequest(
+    val request =
+        llmRequestProvider.createChatGPTRequest(
         OpenAiChatRequestBody(
-            model = model ?: llmRequestProvider.chatModel,
+            model = llmRequestProvider.chatModel,
             messages = messages
         )
     )

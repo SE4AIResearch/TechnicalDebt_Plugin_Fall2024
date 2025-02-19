@@ -34,11 +34,11 @@ open class OpenAIBaseRequest<Body>(path: String, body: Body) : LLMBaseRequest<Bo
     }
 }
 
-class OpenAIEditRequest(body: OpenAiEditRequestBody) :
-    OpenAIBaseRequest<OpenAiEditRequestBody>("edits", body)
+//class OpenAIEditRequest(body: OpenAiEditRequestBody) :
+//    OllamaAIRequests<OpenAiEditRequestBody>("edits", body)
 
-class OpenAICompletionRequest(body: OpenAiCompletionRequestBody) :
-    OpenAIBaseRequest<OpenAiCompletionRequestBody>("completions", body)
+//class OpenAICompletionRequest(body: OpenAiCompletionRequestBody) :
+//    OpenAIBaseRequest<OpenAiCompletionRequestBody>("completions", body)
 
 class OpenAIChatRequest(body: OpenAiChatRequestBody) :
     OpenAIBaseRequest<OpenAiChatRequestBody>("chat/completions", body)

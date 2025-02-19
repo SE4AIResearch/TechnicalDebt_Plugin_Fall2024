@@ -2,9 +2,11 @@ package com.intellij.ml.llm.template.intentions
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.ml.llm.template.LLMBundle
-import com.intellij.ml.llm.template.models.CodexRequestProvider
-import com.intellij.ml.llm.template.models.LLMRequestProvider
-import com.intellij.ml.llm.template.models.sendEditRequest
+import com.intellij.ml.llm.template.models.*
+//import com.intellij.ml.llm.template.models.CodexRequestProvider
+import com.intellij.ml.llm.template.models.ollama.OllamaBody
+import com.intellij.ml.llm.template.models.openai.OpenAiChatMessage
+//import com.intellij.ml.llm.template.models.sendEditRequest
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
@@ -22,13 +24,32 @@ import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
+import java.util.*
 
 @Suppress("UnstableApiUsage")
 abstract class ApplyTransformationIntention(
-    private val llmRequestProvider: LLMRequestProvider = CodexRequestProvider
+    private val llmRequestProvider: LLMRequestProvider? = OllamaRequestProvider
 ) : IntentionAction {
     private val logger = Logger.getInstance("#com.intellij.ml.llm")
+    private fun extractBracketContent(str: String): String {
+        val sb = StringBuilder()
+        var inBracket = false
 
+        for (c in str) {
+            when (c) {
+                '$' -> {
+                    inBracket = true
+                    continue
+                }
+                '$' -> break
+                else -> if (inBracket) sb.append(c)
+            }
+        }
+
+        return sb.toString()
+    }
+
+    
     override fun getFamilyName(): String = LLMBundle.message("intentions.apply.transformation.family.name")
 
     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
@@ -77,18 +98,78 @@ abstract class ApplyTransformationIntention(
         val task =
             object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
                 override fun run(indicator: ProgressIndicator) {
-                    val response = sendEditRequest(
-                        project,
-                        text,
-                        instruction,
-                        llmRequestProvider = llmRequestProvider,
-                    )
-                    if (response != null) {
-                        response.getSuggestions().firstOrNull()?.let {
-                            logger.info("Suggested change: $it")
-                            invokeLater {
-                                WriteCommandAction.runWriteCommandAction(project) {
-                                    updateDocument(project, it.text, editor.document, textRange)
+
+                    val modelType = 1
+
+
+                    // 1-> ollama
+                    // 0->  openai
+
+                    if (modelType == 1)
+                    {
+                        val ollama = OllamaBody("llama2", "Do you copy? Give a one word response.", "false")
+
+                        val response = llmRequestProvider?.let {
+                            sendOllamaRequest(
+                                project,
+                                ollama.prompt,
+                                stream = "false",
+                                llmRequestProvider = it
+                            )
+                        }
+
+                        if (response != null) {
+                            val suggestions = response.getSuggestions()
+                            if (suggestions.isEmpty()) {
+                                logger.warn("No suggestions received for transformation.")
+                            }
+                            else {
+                                for (s in suggestions) {
+                                    println(s.text)
+                                }
+                            }
+                            response.getSuggestions().firstOrNull()?.let {
+                                logger.info("Suggested change: $it")
+                                invokeLater {
+                                    WriteCommandAction.runWriteCommandAction(project) {
+                                        updateDocument(project, it.text, editor.document, textRange)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    else
+                    {
+                        val messages = listOf(
+                            OpenAiChatMessage(role = "user", content = "[$satdType, fix it]: $text"),
+                        )
+
+                        val response = llmRequestProvider?.let {
+                            sendChatRequest(
+                                project,
+                                messages,
+                                model = llmRequestProvider.chatModel,
+                                llmRequestProvider = it
+                            )
+                        }
+
+                        if (response != null) {
+                            val suggestions = response.getSuggestions()
+                            if (suggestions.isEmpty()) {
+                                logger.warn("No suggestions received for transformation.")
+                            }
+                            else {
+                                for (s in suggestions) {
+                                    println(s.text)
+                                }
+                            }
+                            response.getSuggestions().firstOrNull()?.let {
+                                logger.info("Suggested change: $it")
+                                invokeLater {
+                                    WriteCommandAction.runWriteCommandAction(project) {
+                                        updateDocument(project, it.text, editor.document, textRange)
+                                    }
                                 }
                             }
                         }
@@ -112,3 +193,4 @@ abstract class ApplyTransformationIntention(
 
     override fun startInWriteAction(): Boolean = false
 }
+
