@@ -4,6 +4,9 @@ import com.intellij.ml.llm.template.models.openai.*
 import com.intellij.ml.llm.template.settings.LLMSettingsManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.registry.Registry
+import com.intellij.ml.llm.template.settings.LLMSettingsManager.LLMProvider
+
+
 
 
 /**
@@ -28,6 +31,21 @@ class LLMRequestProvider(
     val editModel: String,
     val chatModel: String,
 ) {
+
+
+    fun createRequest(prompt: String, settings: LLMSettingsManager): LLMBaseRequest<*> {
+        return when (settings.provider) {
+            LLMProvider.OPENAI -> {
+                println("Using OpenAI with prompt: $prompt")
+                MockCompletionRequests()
+            }
+            LLMProvider.OLLAMA -> {
+                println("Using Ollama with prompt: $prompt and server:")
+                MockCompletionRequests()
+            }
+        }
+    }
+
     fun createEditRequest(
         input: String,
         instruction: String,
@@ -68,6 +86,8 @@ class LLMRequestProvider(
         )
 
         return OpenAIChatRequest(body)
+
+
     }
 
     fun createCompletionRequest(
@@ -85,6 +105,7 @@ class LLMRequestProvider(
             logger.info("Emulating request to the API to test response presentation")
             return MockCompletionRequests()
         }
+
 
         return createOpenAiCompletionRequest(
             input, suffix, maxTokens, numberOfSuggestions, temperature, logProbs, topP,

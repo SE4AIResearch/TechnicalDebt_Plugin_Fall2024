@@ -14,13 +14,14 @@ abstract class LLMBaseRequest<Body>(val body: Body) {
 }
 
 enum class LLMRequestType {
-    OPENAI_EDIT, OPENAI_COMPLETION, MOCK;
+    OPENAI_EDIT, OPENAI_COMPLETION, MOCK, OLLAMA;
 
     companion object {
         fun byRequest(request: LLMBaseRequest<*>): LLMRequestType {
             return when (request) {
                 is OpenAIEditRequest -> OPENAI_EDIT
                 is OpenAICompletionRequest -> OPENAI_COMPLETION
+                //is OllamaRequest -> OLLAMA
                 else -> MOCK
             }
         }

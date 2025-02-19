@@ -29,26 +29,6 @@ abstract class ApplyTransformationIntention(
 ) : IntentionAction {
     private val logger = Logger.getInstance("#com.intellij.ml.llm")
 
-
-    fun extractBracketContent(str: String): String {
-        val sb = StringBuilder()
-        var inBracket = false
-
-        for (c in str) {
-            when (c) {
-                '$' -> {
-                    inBracket = true
-                    continue
-                }
-                '$' -> break
-                else -> if (inBracket) sb.append(c)
-            }
-        }
-
-        return sb.toString()
-    }
-
-
     override fun getFamilyName(): String = LLMBundle.message("intentions.apply.transformation.family.name")
 
     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
@@ -61,7 +41,6 @@ abstract class ApplyTransformationIntention(
         val document = editor.document
         val selectionModel = editor.selectionModel
         val selectedText = selectionModel.selectedText
-
         if (selectedText != null) {
             val textRange = TextRange.create(selectionModel.selectionStart, selectionModel.selectionEnd)
             transform(project, selectedText, editor, textRange)
@@ -93,12 +72,7 @@ abstract class ApplyTransformationIntention(
     }
 
     private fun transform(project: Project, text: String, editor: Editor, textRange: TextRange) {
-
-        // temporary way to get satd_type
-        val satdType = extractBracketContent(text)
-
-
-        val instruction = getInstruction(project, editor, satdType) ?: return
+        val instruction = getInstruction(project, editor) ?: return
         logger.info("Invoke transformation action with '$instruction' instruction for '$text'")
         val task =
             object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
@@ -124,7 +98,7 @@ abstract class ApplyTransformationIntention(
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    abstract fun getInstruction(project: Project, editor: Editor, satdType: String): String?
+    abstract fun getInstruction(project: Project, editor: Editor): String?
 
     private fun updateDocument(project: Project, suggestion: String, document: Document, textRange: TextRange) {
         document.replaceString(textRange.startOffset, textRange.endOffset, suggestion)

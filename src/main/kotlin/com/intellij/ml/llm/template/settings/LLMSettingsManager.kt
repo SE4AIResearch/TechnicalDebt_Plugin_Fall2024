@@ -10,6 +10,13 @@ import com.intellij.util.xmlb.annotations.OptionTag
     storages = [Storage(value = "llm.for.code.xml", roamingType = RoamingType.DISABLED, exportable = true)]
 )
 class LLMSettingsManager : PersistentStateComponent<LLMSettings> {
+    enum class LLMProvider {
+        OPENAI, OLLAMA
+    }
+
+    var provider: LLMProvider = LLMProvider.OPENAI
+    var aiKey: String = ""
+    var ollamaServer: String = ""
 
     companion object {
 
@@ -24,9 +31,24 @@ class LLMSettingsManager : PersistentStateComponent<LLMSettings> {
         state = newState
     }
 
+
+    //fun getProvider(): LLMProvider = provider
+    fun updateProvider(value: LLMProvider) {
+        provider = value
+    }
+
     fun getOpenAiKey(): String {
         return CredentialsHolder.getInstance().getOpenAiApiKey() ?: ""
     }
+
+    fun getOllServer(): String {
+        return state.ollamaServer
+    }
+
+    fun setOllServer(url: String) {
+        state.ollamaServer = url
+    }
+
 
     fun setOpenAiKey(key: String) {
         CredentialsHolder.getInstance().setOpenAiApiKey(key)
@@ -93,6 +115,11 @@ class LLMSettings : BaseState() {
 
     @get:OptionTag("open_ai")
     var openAi by property(OpenAISettings()) { it == OpenAISettings() }
+
+    @get:OptionTag("ollama_server")
+    //var ollamaServer by string("")
+    var ollamaServer: String = ""
+
 }
 
 class OpenAISettings : BaseState() {
@@ -119,4 +146,6 @@ class OpenAISettings : BaseState() {
 
     @get:OptionTag("suffix_length")
     var suffixLength by property(256)
+
+
 }

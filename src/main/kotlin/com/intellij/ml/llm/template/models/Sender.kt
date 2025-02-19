@@ -83,6 +83,11 @@ fun sendChatRequest(
 }
 
 private fun sendRequest(project: Project, request: LLMBaseRequest<*>): LLMBaseResponse? {
+    val settings = LLMSettingsManager.getInstance()
+
+
+
+
     try {
         return request.sendSync()
     } catch (e: AuthorizationException) {
