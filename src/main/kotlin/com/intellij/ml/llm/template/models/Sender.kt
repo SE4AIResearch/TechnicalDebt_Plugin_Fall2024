@@ -8,6 +8,7 @@ import com.intellij.ml.llm.template.models.ollama.OllamaRequest
 import com.intellij.ml.llm.template.models.openai.AuthorizationException
 import com.intellij.ml.llm.template.models.openai.OpenAiChatMessage
 import com.intellij.ml.llm.template.models.openai.OpenAiChatRequestBody
+import com.intellij.ml.llm.template.settings.LLMSettingsManager
 import com.intellij.ml.llm.template.showAuthorizationFailedNotification
 import com.intellij.ml.llm.template.showRequestFailedNotification
 import com.intellij.ml.llm.template.showUnauthorizedNotification

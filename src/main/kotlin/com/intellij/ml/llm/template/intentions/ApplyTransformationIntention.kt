@@ -6,6 +6,7 @@ import com.intellij.ml.llm.template.models.*
 //import com.intellij.ml.llm.template.models.CodexRequestProvider
 import com.intellij.ml.llm.template.models.ollama.OllamaBody
 import com.intellij.ml.llm.template.models.openai.OpenAiChatMessage
+import com.intellij.ml.llm.template.settings.LLMSettingsManager
 //import com.intellij.ml.llm.template.models.sendEditRequest
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.command.WriteCommandAction
@@ -93,7 +94,11 @@ abstract class ApplyTransformationIntention(
     }
 
     private fun transform(project: Project, text: String, editor: Editor, textRange: TextRange) {
-        val instruction = getInstruction(project, editor) ?: return
+        val settings = LLMSettingsManager.getInstance()
+        val modelType = if (settings.provider.equals(LLMSettingsManager.LLMProvider.OLLAMA)) 0 else 1
+        val satdType = extractBracketContent(text)
+
+        val instruction = getInstruction(project, editor, satdType) ?: return
         logger.info("Invoke transformation action with '$instruction' instruction for '$text'")
         val task =
             object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
@@ -179,7 +184,7 @@ abstract class ApplyTransformationIntention(
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    abstract fun getInstruction(project: Project, editor: Editor): String?
+    abstract fun getInstruction(project: Project, editor: Editor, satdType: String): String?
 
     private fun updateDocument(project: Project, suggestion: String, document: Document, textRange: TextRange) {
         document.replaceString(textRange.startOffset, textRange.endOffset, suggestion)

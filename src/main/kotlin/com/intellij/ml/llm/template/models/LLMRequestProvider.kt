@@ -3,6 +3,7 @@ package com.intellij.ml.llm.template.models
 import com.intellij.ml.llm.template.models.ollama.OllamaBody
 import com.intellij.ml.llm.template.models.ollama.OllamaRequest
 import com.intellij.ml.llm.template.models.openai.*
+import com.intellij.ml.llm.template.settings.LLMSettingsManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.ml.llm.template.settings.LLMSettingsManager.LLMProvider
@@ -46,12 +47,7 @@ public class LLMRequestProvider(
         }
     }
 
-    fun createEditRequest(
-        input: String,
-        instruction: String,
-        temperature: Double,
-        topP: Double,
-        numberOfSuggestions: Int
+
     fun createOllamaRequest(
         body: OllamaBody,
     ): LLMBaseRequest<*> {
