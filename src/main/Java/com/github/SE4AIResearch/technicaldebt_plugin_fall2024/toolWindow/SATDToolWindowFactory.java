@@ -16,6 +16,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.stream.Collectors;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
@@ -37,94 +38,102 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 
 public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
-        @Override
-        public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-            JPanel toolWindowPanel = new JBPanel<>();
-            toolWindowPanel.setLayout(new BorderLayout());
-            JTabbedPane tabbedPane = new JTabbedPane();
 
-            JBLabel label = new JBLabel("Click the button to connect to SATD database...");
-            toolWindowPanel.add(label, BorderLayout.NORTH);
+    @Override
+    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        JPanel toolWindowPanel = new JBPanel<>();
+        toolWindowPanel.setLayout(new BorderLayout());
+        JTabbedPane tabbedPane = new JTabbedPane();
 
-            // Create a button to start the process
-            JButton button = new JButton("Fetch SATD Data");
-            toolWindowPanel.add(button, BorderLayout.SOUTH);
+        JBLabel label = new JBLabel("Click the button to connect to SATD database...");
+        toolWindowPanel.add(label, BorderLayout.NORTH);
 
-            // Create a table model with column names
-            DefaultTableModel tableModel = new DefaultTableModel();
-            tableModel.addColumn("File ID");
-            tableModel.addColumn("Comment");
-            tableModel.addColumn("Path");
-            tableModel.addColumn("Start Line");
-            tableModel.addColumn("End Line");
-            tableModel.addColumn("Containing Class");
-            tableModel.addColumn("Containing Method");
-            tableModel.addColumn("SATD Type");
+        // Create a button to start the process
+        JButton button = new JButton("Fetch SATD Data");
+        toolWindowPanel.add(button, BorderLayout.SOUTH);
 
-            // Create the JTable with the model
-            JTable table = new JTable(tableModel);
-            table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        // Create a table model with column names
+        DefaultTableModel tableModel = new DefaultTableModel();
+        tableModel.addColumn("File ID");
+        tableModel.addColumn("Comment");
+        tableModel.addColumn("Path");
+        tableModel.addColumn("Start Line");
+        tableModel.addColumn("End Line");
+        tableModel.addColumn("Containing Class");
+        tableModel.addColumn("Containing Method");
 
-            // Set preferred widths for the columns
-            table.getColumnModel().getColumn(0); // Comment Number
-            table.getColumnModel().getColumn(1).setPreferredWidth(500); // Comment
-            table.getColumnModel().getColumn(2); //Path
-            table.getColumnModel().getColumn(3); //Start Line
-            table.getColumnModel().getColumn(4); //End Line
-            table.getColumnModel().getColumn(5); //Containing Class
-            table.getColumnModel().getColumn(6); //Containing Method
+        // Create the JTable with the model
+        JTable table = new JTable(tableModel);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // Disable auto-resizing for better control
 
-            //Makes it so table cannot be edited
-            table.setEnabled(false);
+        // Set preferred widths for the columns
+        table.getColumnModel().getColumn(0); // Comment Number
+        table.getColumnModel().getColumn(1).setPreferredWidth(500); // Comment
+        table.getColumnModel().getColumn(2); //Path
+        table.getColumnModel().getColumn(3); //Start Line
+        table.getColumnModel().getColumn(4); //End Line
+        table.getColumnModel().getColumn(5); //Containing Class
+        table.getColumnModel().getColumn(6); //Containing Method
 
-            // Set custom renderer for the columns to allow text wrapping
-            table.getColumnModel().getColumn(1).setCellRenderer(new TextAreaRenderer());
+        //Makes it so table cannot be edited
+        table.setEnabled(false);
 
-            // TEST: Create the scroll pane and add to the tabbed pane
-            JBScrollPane scrollPane = new JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-            tabbedPane.addTab("SATD In File", scrollPane);
+        // Set custom renderer for the columns to allow text wrapping
+        table.getColumnModel().getColumn(1).setCellRenderer(new TextAreaRenderer());
 
-            //Create 2nd Table
-            DefaultTableModel tableModel2 = new DefaultTableModel();
-            tableModel2.addColumn("SATD ID");
-            tableModel2.addColumn("First File");
-            tableModel2.addColumn("Second File");
-            tableModel2.addColumn("Resolution");
-            JTable table2 = new JTable(tableModel2);
-            table2.setEnabled((false));
-            JBScrollPane scrollPane2 = new JBScrollPane(table2, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        // TEST: Create the scroll pane and add to the tabbed pane
+        JBScrollPane scrollPane = new JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        tabbedPane.addTab("SATD In File", scrollPane);
 
-            tabbedPane.addTab("SATD", scrollPane2);
+        //Create 2nd Table
+        DefaultTableModel tableModel2 = new DefaultTableModel();
+        tableModel2.addColumn("SATD ID");
+        tableModel2.addColumn("First File");
+        tableModel2.addColumn("Second File");
+        tableModel2.addColumn("Resolution");
+        JTable table2 = new JTable(tableModel2);
+        table2.setEnabled((false));
+        JBScrollPane scrollPane2 = new JBScrollPane(table2, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-            toolWindowPanel.add(tabbedPane, BorderLayout.CENTER);
+        tabbedPane.addTab("SATD", scrollPane2);
 
+        toolWindowPanel.add(tabbedPane, BorderLayout.CENTER);
 
-            table.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    if (e.getClickCount() == 2) { // Double-click to navigate
+        String testRepo = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/test_repo.csv";
+        writeTestRepo(testRepo, project);
 
-                        int row = table.rowAtPoint(e.getPoint());
-                        //int column = table.columnAtPoint(e.getPoint());
-                        String path = (String) table.getValueAt(row, 2);
-                        String startLineStr = (String) table.getValueAt(row, 3);
-                        int line = Integer.parseInt(startLineStr);
-                        navigateToCode(project, line, path);
-                    }
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) { // Double-click to navigate
+
+                    int row = table.rowAtPoint(e.getPoint());
+                    //int column = table.columnAtPoint(e.getPoint());
+                    String path = (String) table.getValueAt(row, 2);
+                    String startLineStr = (String) table.getValueAt(row, 3);
+                    int line = Integer.parseInt(startLineStr);
+                    navigateToCode(project, line, path);
                 }
-            });
+            }
+        });
 
-            // Button action to fetch data
-            button.addActionListener(e -> {
-                new DatabaseLookupSwingWorker(tableModel, label, table, tableModel2, table2).execute();
-            });
 
-            // Add panel to IntelliJ's content factory
-            ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
-            Content content = contentFactory.createContent(toolWindowPanel, "", false);
-            toolWindow.getContentManager().addContent(content);
-        }
+        // Set button action
+        button.addActionListener(e -> {
+            // Use ProgressManager to show progress while connecting to the database and fetching data
+            ProgressManager.getInstance().runProcessWithProgressSynchronously(
+                    () -> initializeAndConnectDatabase(tableModel, label, table, tableModel2, table2),
+                    "Fetching SATD Data",
+                    false,
+                    project
+            );
+        });
 
+        // Adds our panel to IntelliJ's content factory
+        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        Content content = contentFactory.createContent(toolWindowPanel, "", false);
+        toolWindow.getContentManager().addContent(content);
+    }
     private void navigateToCode(Project project, int lineNumber, String path) {
         String homePath = project.getBasePath();
         path = homePath + "/" + path;
@@ -148,125 +157,173 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         }
     }
 
-    private static class DatabaseLookupSwingWorker extends SwingWorker<Void, Void> {
-        private final DefaultTableModel tableModel;
-        private final DefaultTableModel tableModel2;
-        private final JBLabel label;
-        private final JTable table;
+    public static String getGitHubUrl(Project project) {
+        VirtualFile gitConfigFile = LocalFileSystem.getInstance()
+                .findFileByPath(project.getBasePath() + "/.git/config");
 
-        public DatabaseLookupSwingWorker(DefaultTableModel tableModel, JBLabel label, JTable table,  DefaultTableModel tableModel2, JTable table2) {
-            this.tableModel = tableModel;
-            this.label = label;
-            this.table = table;
-            this.tableModel2 = tableModel2;
-        }
+        if (gitConfigFile != null) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(gitConfigFile.getInputStream()))) {
 
-        @Override
-        protected Void doInBackground() {
-            tableModel.setRowCount(0);
-            tableModel2.setRowCount(0);
-
-            String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
-            String databasePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/satd.db";
-            String libPath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/";
-
-            try (InputStream inputStream = new FileInputStream(sqlFilePath)) {
-                ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-
-                // Load the SQLite JDBC driver
-                try {
-                    Class.forName("org.sqlite.JDBC");
-                } catch (ClassNotFoundException e) {
-                    label.setText("SQLite JDBC Driver not found. Check your classpath.");
-                    return null;
-                }
-
-                String url = "jdbc:sqlite:" + databasePath;
-
-                try (Connection conn = DriverManager.getConnection(url);
-                     Statement stmt = conn.createStatement()) {
-                    label.setText("Connection successful!");
-
-                    // Execute SQL script
-                    String sql = new String(inputStream.readAllBytes());
-                    for (String query : sql.split(";")) {
-                        if (!query.trim().isEmpty()) {
-                            stmt.execute(query);
-                        }
-                    }
-
-                    if (indicator != null) {
-                        indicator.setText("Database initialization complete.");
-                        indicator.setFraction(0.33);
-                    }
-
-                    // Run external SATD analysis
-                    ProcessBuilder processBuilder = new ProcessBuilder(
-                            "java",
-                            "--add-opens",
-                            "java.base/java.lang=ALL-UNNAMED",
-                            "-jar",
-                            libPath + "target/satd-analyzer-jar-with-all-dependencies.jar",
-                            "-r",
-                            libPath + "test_repo.csv",
-                            "-d",
-                            libPath + "satd.db"
-                    );
-                    processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-                    processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-                    Process process = processBuilder.start();
-                    process.waitFor();
-
-                    if (indicator != null) {
-                        indicator.setText("Database up to date.");
-                        indicator.setFraction(0.66);
-                    }
-
-                    // Fetch SATD data
-                    ResultSet rs = stmt.executeQuery("SELECT * FROM SATDInFile");
-                    int commentNumber = 1;
-                    while (rs.next()) {
-                        Object[] rowData = {
-                                commentNumber++, rs.getString("f_comment"), rs.getString("f_path"),
-                                rs.getInt("start_line"), rs.getInt("end_line"), rs.getString("containing_class"),
-                                rs.getString("containing_method"), "" // Placeholder for SATD Type
-                        };
-                        SwingUtilities.invokeLater(() -> tableModel.addRow(rowData));
-                    }
-
-                    // Fetch SATD Type
-                    rs = stmt.executeQuery("SELECT * FROM SATD");
-                    int rowIndex = 0;
-                    while (rs.next()) {
-                        String resolution = rs.getString("resolution");
-                        int finalRowIndex = rowIndex++;
-                        SwingUtilities.invokeLater(() -> tableModel.setValueAt(resolution, finalRowIndex, 7));
-                        tableModel2.addRow(new Object[]{
-                                rs.getInt("satd_id"), rs.getInt("first_file"), rs.getInt("second_file"), resolution
-                        });
-                    }
-
-                    if (indicator != null) {
-                        indicator.setText("Data fetching complete.");
-                        indicator.setFraction(1.0);
-                    }
-
-                    rs.close();
-                } catch (Exception e) {
-                    label.setText("Connection failed: " + e.getMessage());
-                }
+                String configContent = reader.lines().collect(Collectors.joining("\n"));
+                return extractRemoteUrl(configContent);
             } catch (Exception e) {
-                label.setText("Error: " + e.getMessage());
+                e.printStackTrace();
             }
-            return null;
         }
 
-        @Override
-        protected void done() {
-            SwingUtilities.invokeLater(() -> {
-                label.setText("Data fetching complete.");
-                adjustColumnWidths(table);
-            });
+        return null;
+
+    }
+
+    private static String extractRemoteUrl(String configContent) {
+        String[] lines = configContent.split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i].trim().equals("[remote \"origin\"]")) {
+                for (int j = i + 1; j < lines.length; j++) {
+                    if (lines[j].trim().startsWith("url =")) {
+                        return lines[j].trim().substring(6).trim();
+                    }
+                }
+            }
+        }
+        return null;
+
+    }
+
+    public void writeTestRepo (String path, Project project){
+        String gitUrl = getGitHubUrl(project);
+        gitUrl = gitUrl.substring(0, gitUrl.length()-4);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+            // This will empty the file and write the new content
+            writer.write(gitUrl);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+    public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, JTable table, DefaultTableModel tableModel2, JTable table2) {
+        //Gets the sql filepath from sql folder
+        tableModel.setRowCount(0);
+        tableModel2.setRowCount(0);
+        String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
+        String databasePath =  PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/satd.db";
+        String libPath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/";
+        System.out.println(libPath);
+
+        InputStream inputStream = null;
+        try {
+            inputStream = new FileInputStream(sqlFilePath);
+        } catch (FileNotFoundException e){
+            label.setText("Error: " + e.getMessage());
+        }
+        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+        // Load the MySQL JDBC Driver
+        try {
+            Class.forName("org.sqlite.JDBC"); // This will throw an exception if the driver is not found
+            System.out.println("Driver loaded successfully.");
+        } catch (ClassNotFoundException e) {
+            label.setText("SQLite JDBC Driver not found. Check your classpath.");
+        }
+
+        String url = "jdbc:sqlite:" + databasePath;
+
+        try (Connection conn = DriverManager.getConnection(url);
+             Statement stmt = conn.createStatement()) {
+
+            label.setText("Connection successful!");
+
+            // Read and execute the SQL file
+            String sql = new String(inputStream.readAllBytes());
+            String[] queries = sql.split(";");
+
+            for (String query : queries) {
+                if (!query.trim().isEmpty()) {
+                    stmt.execute(query);
+                }
+            }
+
+            //TODO: dynamically get p_name and p_url
+            //stmt.execute("INSERT INTO Projects (p_name, p_url) VALUES ('apache/log4j', 'https://github.com/apache/log4j')");
+
+            // Update progress
+            if (indicator != null) {
+                indicator.setText("Database initialization complete.");
+                indicator.setFraction(0.33);
+            }
+
+            try {
+                ProcessBuilder processBuilder = new ProcessBuilder(
+                        "java",
+                        "--add-opens",
+                        "java.base/java.lang=ALL-UNNAMED",
+                        "-jar",
+                        (libPath + "target/satd-analyzer-jar-with-all-dependencies.jar"),
+                        "-r",
+                        (libPath + "test_repo.csv"),
+                        "-d",
+                        (libPath + "satd.db")
+                );
+
+                processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+                processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+                Process process = processBuilder.start();
+
+                int exitCode = process.waitFor();
+                System.out.println("Exit code:" + exitCode);
+            } catch(IOException | InterruptedException e){
+                e.printStackTrace();
+            }
+
+            // Update progress
+            if (indicator != null) {
+                indicator.setText("Database up to Date.");
+                indicator.setFraction(0.66);
+            }
+
+            String fetchQuery = "SELECT * FROM SATDInFile";
+            ResultSet rs = stmt.executeQuery(fetchQuery);
+
+            // Displaying query results
+            while (rs.next()) {
+                int f_id = rs.getInt("f_id");
+                String f_comment = rs.getString("f_comment"); // Replace with actual column name
+                String f_path = rs.getString("f_path");
+                int start_line = rs.getInt("start_line");
+                int end_line = rs.getInt("end_line");
+                String  containing_class = rs.getString("containing_class");
+                String containing_method = rs.getString("containing_method");
+                tableModel.addRow(new Object[]{f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method});
+            }
+
+            fetchQuery = "SELECT * FROM SATD";
+            rs = stmt.executeQuery(fetchQuery);
+
+            int i = 0;
+            while (rs.next()) {
+                int satd_id = rs.getInt("satd_id");
+                int first_file = rs.getInt("first_file");
+                int second_file = rs.getInt("second_file");
+                String resolution = rs.getString("resolution");
+                tableModel2.addRow(new Object[]{satd_id, first_file, second_file, resolution});
+            }
+
+            adjustColumnWidths(table);
+            //adjustColumnWidths(table2);
+
+            // Update progress
+            if (indicator != null) {
+                indicator.setText("Data fetching complete.");
+                indicator.setFraction(1.0);
+            };
+
+            // Close resources
+            rs.close();
+            stmt.close();
+            conn.close();
+        } catch (Exception e) {
+            label.setText("Connection failed: " + e.getMessage());
         }
     }
 
