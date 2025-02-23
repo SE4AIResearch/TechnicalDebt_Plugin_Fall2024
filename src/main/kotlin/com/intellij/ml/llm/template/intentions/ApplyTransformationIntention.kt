@@ -37,20 +37,21 @@ abstract class ApplyTransformationIntention(
         var inBracket = false
 
         for (c in str) {
-            when (c) {
-                '$' -> {
+            when {
+                c == '$' && !inBracket -> {
                     inBracket = true
                     continue
                 }
-                '$' -> break
-                else -> if (inBracket) sb.append(c)
+                c == '$' && inBracket -> break
+                inBracket -> sb.append(c)
             }
         }
 
         return sb.toString()
     }
 
-    
+
+
     override fun getFamilyName(): String = LLMBundle.message("intentions.apply.transformation.family.name")
 
     override fun isAvailable(project: Project, editor: Editor?, file: PsiFile?): Boolean {
@@ -95,7 +96,6 @@ abstract class ApplyTransformationIntention(
 
     private fun transform(project: Project, text: String, editor: Editor, textRange: TextRange) {
         val settings = LLMSettingsManager.getInstance()
-        val modelType = if (settings.provider.equals(LLMSettingsManager.LLMProvider.OLLAMA)) 0 else 1
         val satdType = extractBracketContent(text)
 
         val instruction = getInstruction(project, editor, satdType) ?: return
@@ -103,16 +103,14 @@ abstract class ApplyTransformationIntention(
         val task =
             object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
                 override fun run(indicator: ProgressIndicator) {
-
-                    val modelType = 1
-
+                    val modelType = if (settings.provider.equals(LLMSettingsManager.LLMProvider.OLLAMA)) 0 else 1
 
                     // 1-> ollama
                     // 0->  openai
-
-                    if (modelType == 1)
+                    if (modelType == 0)
                     {
-                        val ollama = OllamaBody("llama2", "Do you copy? Give a one word response.", "false")
+                         val prompt = "This code has SATDType {"+ extractBracketContent(text) + "}. Take a look at the code: {$text} and fix it."
+                        val ollama = OllamaBody("llama3.2", prompt, "false")
 
                         val response = llmRequestProvider?.let {
                             sendOllamaRequest(

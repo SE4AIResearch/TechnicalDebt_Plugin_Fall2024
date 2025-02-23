@@ -77,7 +77,7 @@ fun sendOllamaRequest(
 
 ): LLMBaseResponse? {
     val request =
-        llmRequestProvider.createOllamaRequest(OllamaBody("llama2", prompt = prompt, stream = "false"))
+        llmRequestProvider.createOllamaRequest(OllamaBody("llama3.2", prompt = prompt, stream = "false"))
     return sendRequest(project, request)
 }
 

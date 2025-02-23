@@ -8,9 +8,6 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.ml.llm.template.settings.LLMSettingsManager.LLMProvider
 
-
-
-
 /**
  * Available options: https://beta.openai.com/docs/models/codex
  */
@@ -26,8 +23,10 @@ private val logger = Logger.getInstance("#com.intellij.ml.llm.template.models")
 
 //val CodexRequestProvider = LLMRequestProvider(CODEX_COMPLETION_MODEL, CODEX_EDIT_MODEL, CHAT_GPT_3_5_TURBO)
 
+private const val MODEL = "deepseek-r1"
+
 val GPTRequestProvider = LLMRequestProvider(CHAT_GPT_3_5_TURBO)
-val OllamaRequestProvider = LLMRequestProvider("llama2")
+val OllamaRequestProvider = LLMRequestProvider(MODEL)
 
 public class LLMRequestProvider(
     val chatModel: String,

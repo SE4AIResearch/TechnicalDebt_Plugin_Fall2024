@@ -13,15 +13,16 @@ val PORT = "11434"
 
 
 //TODO: implement option for local ai (e.g DeepSeek )
-open class OllamaBaseRequest<Body>(body: Body) : LLMBaseRequest<Body>(body) {
+open class OllamaBaseRequest<Body>(body: OllamaBody) : LLMBaseRequest<OllamaBody>(body) {
 
     private val url = "http://127.0.0.1:$PORT/api/generate"
 
     override fun sendSync(): LLMBaseResponse? {
-        val model = "llama2";
+        val model = "deepseek-r1";
+
         val payload = mapOf(
             "model" to OllamaRequestProvider.chatModel,  // Correct model inclusion
-            "prompt" to "Do you copy? Give a one-word response.",
+            "prompt" to body.prompt,
             "stream" to false
         )
 

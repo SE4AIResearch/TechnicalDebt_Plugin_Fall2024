@@ -23,7 +23,7 @@ enum class LLMRequestType {
             return when (request) {
 //                is OpenAIEditRequest -> OPENAI_EDIT
 //                is OpenAICompletionRequest -> OPENAI_COMPLETION
-                is OllamaBaseRequest -> OLLAMA
+                is OllamaBaseRequest<*> -> OLLAMA
                 is OpenAIChatRequest -> OPENAI_CHAT
                 else -> MOCK
             }
