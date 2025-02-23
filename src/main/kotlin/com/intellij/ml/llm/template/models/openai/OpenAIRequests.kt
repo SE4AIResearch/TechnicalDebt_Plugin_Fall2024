@@ -9,9 +9,12 @@ import java.net.HttpURLConnection
 open class OpenAIBaseRequest<Body>(path: String, body: Body) : LLMBaseRequest<Body>(body) {
     private val url = "https://api.openai.com/v1/$path"
 
+
     override fun sendSync(): OpenAIResponse? {
         val apiKey = CredentialsHolder.getInstance().getOpenAiApiKey()?.ifEmpty { null }
             ?: throw AuthorizationException("OpenAI API Key is not provided")
+        println("Requesting URL: $url")
+        println("API Key: ${if (apiKey.isNotEmpty()) apiKey else "Missing"}")
 
         return HttpRequests.post(url, "application/json")
             .tuner {
@@ -22,10 +25,13 @@ open class OpenAIBaseRequest<Body>(path: String, body: Body) : LLMBaseRequest<Bo
             }
             .connect { request ->
                 request.write(GsonBuilder().create().toJson(body))
-
+                println("Request Body: " + GsonBuilder().create().toJson(body))
                 val responseCode = (request.connection as HttpURLConnection).responseCode
+                println("Response Code: $responseCode")
+
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     val response = request.readString()
+                    println("Response: $response")
                     Gson().fromJson(response, OpenAIResponse::class.java)
                 } else {
                     null

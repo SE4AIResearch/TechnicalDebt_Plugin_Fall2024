@@ -18,7 +18,6 @@ open class OllamaBaseRequest<Body>(body: OllamaBody) : LLMBaseRequest<OllamaBody
     private val url = "http://127.0.0.1:$PORT/api/generate"
 
     override fun sendSync(): LLMBaseResponse? {
-        val model = "deepseek-r1";
 
         val payload = mapOf(
             "model" to OllamaRequestProvider.chatModel,  // Correct model inclusion
@@ -39,7 +38,7 @@ open class OllamaBaseRequest<Body>(body: OllamaBody) : LLMBaseRequest<OllamaBody
 
                     println("Received response: ${response}")
 
-                    Gson().fromJson(response, OllamaResponse::class.java)
+                    GsonBuilder().serializeNulls().create().fromJson(response, OllamaResponse::class.java)
                 } else {
                     null
                 }

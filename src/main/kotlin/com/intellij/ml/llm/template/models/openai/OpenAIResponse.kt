@@ -5,6 +5,10 @@ import com.intellij.ml.llm.template.models.LLMBaseResponse
 import com.intellij.ml.llm.template.models.LLMResponseChoice
 
 data class OpenAIResponse(
+
+    @SerializedName("id")
+    val id: String,
+
     @SerializedName("object")
     val type: String,
 
@@ -18,33 +22,32 @@ data class OpenAIResponse(
     val usage: ResponseUsage,
 ) : LLMBaseResponse {
     override fun getSuggestions(): List<LLMResponseChoice> = choices.map {
-        LLMResponseChoice(it.text, it.finishReason)
+        LLMResponseChoice(it.message.content, it.finishReason)
     }
 }
 
 
-
 data class ResponseChoice(
-    @SerializedName("text")
-    val text: String,
-
-    @SerializedName("index")
-    val index: Long,
-
-    @SerializedName("logprobs")
-    val logprobs: ResponseLogprobs,
-
-    @SerializedName("finish_reason")
-    val finishReason: String,
+        @SerializedName("index") val index: Long,
+        @SerializedName("message") val message: ResponseMessage,
+        @SerializedName("logprobs") val logprobs: ResponseLogprobs?,  // Nullable
+        @SerializedName("finish_reason") val finishReason: String
 )
 
+
+data class ResponseMessage(
+        @SerializedName("role")
+        val role: String,
+
+        @SerializedName("content")
+        val content: String,
+
+)
 data class ResponseLogprobs(
-    @SerializedName("tokens")
-    val tokens: List<String>,
-
-    @SerializedName("token_logprobs")
-    val tokenLogprobs: List<Double>
+        @SerializedName("tokens") val tokens: List<String> = emptyList(),
+        @SerializedName("token_logprobs") val tokenLogprobs: List<Double> = emptyList()
 )
+
 
 data class ResponseUsage(
     @SerializedName("prompt_tokens")

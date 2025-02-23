@@ -29,7 +29,6 @@ import java.util.*
 
 @Suppress("UnstableApiUsage")
 abstract class ApplyTransformationIntention(
-    private val llmRequestProvider: LLMRequestProvider? = OllamaRequestProvider
 ) : IntentionAction {
     private val logger = Logger.getInstance("#com.intellij.ml.llm")
     private fun extractBracketContent(str: String): String {
@@ -105,12 +104,18 @@ abstract class ApplyTransformationIntention(
                 override fun run(indicator: ProgressIndicator) {
                     val modelType = if (settings.provider.equals(LLMSettingsManager.LLMProvider.OLLAMA)) 0 else 1
 
+                    val llmRequestProvider: LLMRequestProvider = when (settings.provider) {
+                        LLMSettingsManager.LLMProvider.OLLAMA -> OllamaRequestProvider
+                        LLMSettingsManager.LLMProvider.OPENAI -> GPTRequestProvider
+                        else -> throw IllegalStateException("Unsupported LLM provider: ${settings.provider}")
+                    }
+
                     // 1-> ollama
                     // 0->  openai
                     if (modelType == 0)
                     {
-                         val prompt = "This code has SATDType {"+ extractBracketContent(text) + "}. Take a look at the code: {$text} and fix it."
-                        val ollama = OllamaBody("llama3.2", prompt, "false")
+                        val prompt = "This code has SATDType {"+ extractBracketContent(text) + "}. Take a look at the code: {$text} and fix it."
+                        val ollama = OllamaBody(llmRequestProvider.chatModel, prompt, "false")
 
                         val response = llmRequestProvider?.let {
                             sendOllamaRequest(
