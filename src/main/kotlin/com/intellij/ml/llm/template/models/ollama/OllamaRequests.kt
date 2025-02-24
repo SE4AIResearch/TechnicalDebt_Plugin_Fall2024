@@ -50,7 +50,7 @@ open class OllamaBaseRequest<Body>(body: Body) : LLMBaseRequest<Body>(body) {
 
                     println("Received response: ${response}")
 
-                    Gson().fromJson(response, OllamaResponse::class.java)
+                    GsonBuilder().serializeNulls().create().fromJson(response, OllamaResponse::class.java)
                 } else {
                     null
                 }

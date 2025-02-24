@@ -24,11 +24,12 @@ private const val CHAT_GPT_3_5_TURBO = "gpt-3.5-turbo"
 
 private val logger = Logger.getInstance("#com.intellij.ml.llm.template.models")
 
-
 //val CodexRequestProvider = LLMRequestProvider(CODEX_COMPLETION_MODEL, CODEX_EDIT_MODEL, CHAT_GPT_3_5_TURBO)
 
+private const val MODEL = "deepseek-r1"
+
 val GPTRequestProvider = LLMRequestProvider(CHAT_GPT_3_5_TURBO)
-val OllamaRequestProvider = LLMRequestProvider("llama2")
+val OllamaRequestProvider = LLMRequestProvider(MODEL)
 
 public class LLMRequestProvider(
     val chatModel: String,
