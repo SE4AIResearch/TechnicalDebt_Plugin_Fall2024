@@ -45,6 +45,7 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
                 textField().bindText(settings::getOllServer, settings::setOllServer)
             }
 
+            ollamaServerRow.visible(false)
 
             row(LLMBundle.message("settings.configurable.llm.provider.label")) {
                 providerComboBox = comboBox(
