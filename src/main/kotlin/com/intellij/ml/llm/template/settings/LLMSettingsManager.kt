@@ -1,6 +1,6 @@
 package com.intellij.ml.llm.template.settings
 
-import com.intellij.ml.llm.template.models.openai.CredentialsHolder
+import com.intellij.ml.llm.template.models.CredentialsHolder
 import com.intellij.openapi.components.*
 import com.intellij.util.xmlb.annotations.OptionTag
 
@@ -11,12 +11,14 @@ import com.intellij.util.xmlb.annotations.OptionTag
 )
 class LLMSettingsManager : PersistentStateComponent<LLMSettings> {
     enum class LLMProvider {
-        OPENAI, OLLAMA
+        OPENAI, OLLAMA, GEMINI
     }
 
     var provider: LLMProvider = LLMProvider.OPENAI
-    var aiKey: String = ""
+//    var openAiKey: String = ""
     var ollamaServer: String = ""
+//    var GeminiKey: String = ""
+
 
     companion object {
 
@@ -40,7 +42,9 @@ class LLMSettingsManager : PersistentStateComponent<LLMSettings> {
     fun getOpenAiKey(): String {
         return CredentialsHolder.getInstance().getOpenAiApiKey() ?: ""
     }
-
+    fun setOpenAiKey(key: String) {
+        CredentialsHolder.getInstance().setOpenAiApiKey(key)
+    }
     fun getOllServer(): String {
         return state.ollamaServer
     }
@@ -49,10 +53,16 @@ class LLMSettingsManager : PersistentStateComponent<LLMSettings> {
         state.ollamaServer = url
     }
 
-
-    fun setOpenAiKey(key: String) {
-        CredentialsHolder.getInstance().setOpenAiApiKey(key)
+    fun getGeminiKey(): String {
+        return CredentialsHolder.getInstance().getGeminiKey() ?: ""
     }
+
+    fun setGeminiKey(key: String) {
+        CredentialsHolder.getInstance().setGeminiApiKey(key)
+    }
+
+
+
 
     fun getOpenAiOrganization(): String {
         return CredentialsHolder.getInstance().getOpenAiOrganization() ?: ""
@@ -119,6 +129,12 @@ class LLMSettings : BaseState() {
     @get:OptionTag("ollama_server")
     //var ollamaServer by string("")
     var ollamaServer: String = ""
+
+    @get:OptionTag("UseGemini")
+    var useGemini by property(false)
+
+    @get:OptionTag("GeminiKey")
+    var GeminiKey by string("")
 
 }
 

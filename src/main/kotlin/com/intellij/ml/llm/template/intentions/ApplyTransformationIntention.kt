@@ -3,6 +3,9 @@ package com.intellij.ml.llm.template.intentions
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.ml.llm.template.LLMBundle
 import com.intellij.ml.llm.template.models.*
+import com.intellij.ml.llm.template.models.gemini.GeminiBody
+import com.intellij.ml.llm.template.models.gemini.GeminiContents
+import com.intellij.ml.llm.template.models.gemini.GeminiParts
 //import com.intellij.ml.llm.template.models.CodexRequestProvider
 import com.intellij.ml.llm.template.models.ollama.OllamaBody
 import com.intellij.ml.llm.template.models.openai.OpenAiChatMessage
@@ -25,7 +28,6 @@ import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
-import java.util.*
 
 @Suppress("UnstableApiUsage")
 abstract class ApplyTransformationIntention(
@@ -102,29 +104,56 @@ abstract class ApplyTransformationIntention(
         val task =
             object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
                 override fun run(indicator: ProgressIndicator) {
-                    val modelType = if (settings.provider.equals(LLMSettingsManager.LLMProvider.OLLAMA)) 0 else 1
+                    val prompt = "This code has SATDType {"+ extractBracketContent(text) + "}. Take a look at the code: {$text} and fix it."
 
-                    val llmRequestProvider: LLMRequestProvider = when (settings.provider) {
-                        LLMSettingsManager.LLMProvider.OLLAMA -> OllamaRequestProvider
-                        LLMSettingsManager.LLMProvider.OPENAI -> GPTRequestProvider
-                        else -> throw IllegalStateException("Unsupported LLM provider: ${settings.provider}")
-                    }
+                    var response:LLMBaseResponse? =    null
+                    var provider:LLMRequestProvider? = null
 
-                    // 1-> ollama
-                    // 0->  openai
-                    if (modelType == 0)
-                    {
-                        val prompt = "This code has SATDType {"+ extractBracketContent(text) + "}. Take a look at the code: {$text} and fix it."
-                        val ollama = OllamaBody(llmRequestProvider.chatModel, prompt, "false")
+                    val llmRequestProvider: Unit = when (settings.provider) {
+                        LLMSettingsManager.LLMProvider.GEMINI -> {
+                            provider = GeminiRequestProvider
 
-                        val response = llmRequestProvider?.let {
-                            sendOllamaRequest(
-                                project,
-                                ollama.prompt,
-                                stream = "false",
-                                llmRequestProvider = it
+                            val part = GeminiParts(text = prompt)
+                            val contents = GeminiContents(parts = part)
+                            val body = GeminiBody(contents)
+
+                            print(contents.toString())
+
+                            response = sendGeminiRequest(project,
+                                    body,
+                                    llmRequestProvider = provider
                             )
                         }
+                        LLMSettingsManager.LLMProvider.OLLAMA -> {
+                            provider = OllamaRequestProvider
+
+                            val ollama = OllamaBody(provider.chatModel, prompt, "false")
+
+                            response = sendOllamaRequest(
+                                    project,
+                                    ollama.prompt,
+                                    stream = "false",
+                                    llmRequestProvider = provider
+                            )
+                        }
+                        LLMSettingsManager.LLMProvider.OPENAI -> {
+                            provider = GPTRequestProvider
+
+
+                            val messages = listOf(
+                                    OpenAiChatMessage(role = "user", content = "[$satdType, fix it]: $text"),
+                            )
+
+                            response = sendChatRequest(
+                                    project,
+                                    messages,
+                                    model = provider.chatModel,
+                                    llmRequestProvider = provider
+                            )
+
+                        }
+                    }
+
 
                         if (response != null) {
                             val suggestions = response.getSuggestions()
@@ -147,49 +176,14 @@ abstract class ApplyTransformationIntention(
                         }
                     }
 
-                    else
-                    {
-                        val messages = listOf(
-                            OpenAiChatMessage(role = "user", content = "[$satdType, fix it]: $text"),
-                        )
-
-                        val response = llmRequestProvider?.let {
-                            sendChatRequest(
-                                project,
-                                messages,
-                                model = llmRequestProvider.chatModel,
-                                llmRequestProvider = it
-                            )
-                        }
-
-                        if (response != null) {
-                            val suggestions = response.getSuggestions()
-                            if (suggestions.isEmpty()) {
-                                logger.warn("No suggestions received for transformation.")
-                            }
-                            else {
-                                for (s in suggestions) {
-                                    println(s.text)
-                                }
-                            }
-                            response.getSuggestions().firstOrNull()?.let {
-                                logger.info("Suggested change: $it")
-                                invokeLater {
-                                    WriteCommandAction.runWriteCommandAction(project) {
-                                        updateDocument(project, it.text, editor.document, textRange)
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
-            }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
+}
 
-    abstract fun getInstruction(project: Project, editor: Editor, satdType: String): String?
+    fun getInstruction(project: Project, editor: Editor, satdType: String) {}
 
-    private fun updateDocument(project: Project, suggestion: String, document: Document, textRange: TextRange) {
+private fun updateDocument(project: Project, suggestion: String, document: Document, textRange: TextRange) {
         document.replaceString(textRange.startOffset, textRange.endOffset, suggestion)
         PsiDocumentManager.getInstance(project).commitDocument(document)
         val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
@@ -199,6 +193,4 @@ abstract class ApplyTransformationIntention(
         }
     }
 
-    override fun startInWriteAction(): Boolean = false
-}
 

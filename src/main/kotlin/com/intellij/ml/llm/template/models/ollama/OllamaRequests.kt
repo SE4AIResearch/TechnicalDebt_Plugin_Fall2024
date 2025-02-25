@@ -5,20 +5,20 @@ import com.google.gson.GsonBuilder
 import com.intellij.ml.llm.template.models.LLMBaseRequest
 import com.intellij.ml.llm.template.models.LLMBaseResponse
 import com.intellij.ml.llm.template.models.OllamaRequestProvider
-import com.intellij.ml.llm.template.models.openai.CredentialsHolder
 import com.intellij.ml.llm.template.settings.LLMSettingsManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.util.io.HttpRequests
 import java.net.HttpURLConnection
 
-val PORT = "11434"
+
 
 //TODO: implement option for local ai (e.g DeepSeek )
-open class OllamaBaseRequest<Body>(body: Body) : LLMBaseRequest<Body>(body) {
+open class OllamaBaseRequest<Body>(body: OllamaBody) : LLMBaseRequest<OllamaBody>(body) {
 
     val settings = LLMSettingsManager.getInstance()
 
-    private val url = settings.getOllServer().ifBlank{ "http://127.0.0.1:$PORT/api/generate" }
+    val DEFAULT_PORT = "11434"
+    private val url = settings.getOllServer().ifBlank{ "http://127.0.0.1:$DEFAULT_PORT/api/generate" }
 
     //
 
@@ -30,10 +30,10 @@ open class OllamaBaseRequest<Body>(body: Body) : LLMBaseRequest<Body>(body) {
 
 
     override fun sendSync(): LLMBaseResponse? {
-        val model = "llama2";
+//        val model = "llama2";
         val payload = mapOf(
             "model" to OllamaRequestProvider.chatModel,  // Correct model inclusion
-            "prompt" to "Do you copy? Give a one-word response.",
+            "prompt" to body.prompt,
             "stream" to false
         )
 

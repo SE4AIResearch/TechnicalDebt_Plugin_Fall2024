@@ -5,30 +5,27 @@ import com.google.gson.GsonBuilder
 import com.intellij.ml.llm.template.models.AuthorizationException
 import com.intellij.ml.llm.template.models.CredentialsHolder
 import com.intellij.ml.llm.template.models.LLMBaseRequest
+import com.intellij.ml.llm.template.models.gemini.GeminiBody
+import com.intellij.ml.llm.template.models.gemini.GeminiContents
 import com.intellij.util.io.HttpRequests
 import java.net.HttpURLConnection
 
-open class OpenAIBaseRequest<Body>(path: String, body: Body) : LLMBaseRequest<Body>(body) {
-    private val url = "https://api.openai.com/v1/$path"
+open class GeminiBaseRequest<Body>( body: Body) : LLMBaseRequest<Body>(body) {
 
-    override fun sendSync(): OpenAIResponse? {
-        val apiKey = CredentialsHolder.getInstance().getOpenAiApiKey()?.ifEmpty { null }
-            ?: throw AuthorizationException("OpenAI API Key is not provided")
+    override fun sendSync(): GeminiResponse? {
+        val apiKey = CredentialsHolder.getInstance().getGeminiKey()?.ifEmpty { null }
+            ?: throw AuthorizationException("Gemini API Key is not provided")
+
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
 
         return HttpRequests.post(url, "application/json")
-            .tuner {
-                it.setRequestProperty("Authorization", "Bearer $apiKey")
-                CredentialsHolder.getInstance().getOpenAiOrganization()?.let { organization ->
-                    it.setRequestProperty("OpenAI-Organization", organization)
-                }
-            }
             .connect { request ->
                 request.write(GsonBuilder().create().toJson(body))
 
                 val responseCode = (request.connection as HttpURLConnection).responseCode
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     val response = request.readString()
-                    Gson().fromJson(response, OpenAIResponse::class.java)
+                    Gson().fromJson(response, GeminiResponse::class.java)
                 } else {
                     null
                 }
@@ -36,12 +33,12 @@ open class OpenAIBaseRequest<Body>(path: String, body: Body) : LLMBaseRequest<Bo
     }
 }
 
+class GeminiRequest(body: GeminiBody) :
+        GeminiBaseRequest<GeminiBody>(body)
+
 //class OpenAIEditRequest(body: OpenAiEditRequestBody) :
 //    OllamaAIRequests<OpenAiEditRequestBody>("edits", body)
 
 //class OpenAICompletionRequest(body: OpenAiCompletionRequestBody) :
 //    OpenAIBaseRequest<OpenAiCompletionRequestBody>("completions", body)
-
-class OpenAIChatRequest(body: OpenAiChatRequestBody) :
-    OpenAIBaseRequest<OpenAiChatRequestBody>("chat/completions", body)
 
