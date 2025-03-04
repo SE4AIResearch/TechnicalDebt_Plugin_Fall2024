@@ -1,9 +1,8 @@
-package com.intellij.ml.llm.template.models.openai
+package com.intellij.ml.llm.template.models.gemini
 
 import com.google.gson.annotations.SerializedName
 import com.intellij.ml.llm.template.models.LLMBaseResponse
 import com.intellij.ml.llm.template.models.LLMResponseChoice
-
 data class GeminiResponse(
 
     @SerializedName("id")
@@ -27,15 +26,14 @@ data class GeminiResponse(
 }
 
 
-data class GeminiResponseChoice(
+data class ResponseChoice(
         @SerializedName("index") val index: Long,
         @SerializedName("message") val message: ResponseMessage,
         @SerializedName("logprobs") val logprobs: ResponseLogprobs?,  // Nullable
         @SerializedName("finish_reason") val finishReason: String
 )
 
-
-data class GeminiResponseMessage(
+data class ResponseMessage(
         @SerializedName("role")
         val role: String,
 
@@ -43,13 +41,12 @@ data class GeminiResponseMessage(
         val content: String,
 
 )
-data class GeminiResponseLogprobs(
+data class ResponseLogprobs(
         @SerializedName("tokens") val tokens: List<String> = emptyList(),
         @SerializedName("token_logprobs") val tokenLogprobs: List<Double> = emptyList()
 )
 
-
-data class GeminiResponseUsage(
+data class ResponseUsage(
     @SerializedName("prompt_tokens")
     val promptTokens: Long,
 

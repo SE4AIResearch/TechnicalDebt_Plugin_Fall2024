@@ -1,7 +1,7 @@
 package com.intellij.ml.llm.template.models
 
-import com.intellij.ml.llm.template.models.gemini.GeminiBody
-import com.intellij.ml.llm.template.models.gemini.GeminiContents
+import com.intellij.ml.llm.template.models.gemini.GeminiRequest
+import com.intellij.ml.llm.template.models.gemini.GeminiRequestBody
 import com.intellij.ml.llm.template.models.ollama.OllamaBody
 import com.intellij.ml.llm.template.models.ollama.OllamaRequest
 import com.intellij.ml.llm.template.models.openai.*
@@ -23,7 +23,7 @@ import com.intellij.ml.llm.template.settings.LLMSettingsManager.LLMProvider
 
 private const val CHAT_GPT_3_5_TURBO = "gpt-3.5-turbo"
 private val logger = Logger.getInstance("#com.intellij.ml.llm.template.models")
-private const val GEMINI = ""
+private const val GEMINI = "gemini-2.0-flash"
 
 //val CodexRequestProvider = LLMRequestProvider(CODEX_COMPLETION_MODEL, CODEX_EDIT_MODEL, CHAT_GPT_3_5_TURBO)
 
@@ -60,7 +60,7 @@ public class LLMRequestProvider(
 
 
     fun createGeminiRequest(
-            body: GeminiBody,
+            body: GeminiRequestBody,
     ): LLMBaseRequest<*> {
         return GeminiRequest(body)
     }

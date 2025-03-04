@@ -69,10 +69,6 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
                 }
             }
 
-
-
-
-
         }
 
         updateVisibility()
@@ -82,7 +78,7 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
         val isGemini = settings.provider == LLMSettingsManager.LLMProvider.GEMINI
         val isOpenAi = settings.provider == LLMSettingsManager.LLMProvider.OPENAI
         val isOllama = settings.provider == LLMSettingsManager.LLMProvider.OLLAMA
-        openAiKeyRow.visible(isGemini)
+        geminiAiKeyRow.visible(isGemini)
         openAiKeyRow.visible(isOpenAi)
         openAiOrgRow.visible(isOpenAi)
         ollamaServerRow.visible(isOllama)

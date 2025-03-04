@@ -8,7 +8,7 @@ class OllamaBody(
 
     @SerializedName("prompt")
     val prompt: String,
-
-    @SerializedName("stream")
-    val stream: String
+//
+//    @SerializedName("stream")
+//    val stream: String
 )

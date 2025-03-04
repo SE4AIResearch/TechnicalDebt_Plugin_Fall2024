@@ -1,16 +1,15 @@
 package com.intellij.ml.llm.template.intentions
 
+//import com.intellij.ml.llm.template.models.CodexRequestProvider
+//import com.intellij.ml.llm.template.models.sendEditRequest
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.ml.llm.template.LLMBundle
 import com.intellij.ml.llm.template.models.*
-import com.intellij.ml.llm.template.models.gemini.GeminiBody
-import com.intellij.ml.llm.template.models.gemini.GeminiContents
-import com.intellij.ml.llm.template.models.gemini.GeminiParts
-//import com.intellij.ml.llm.template.models.CodexRequestProvider
+import com.intellij.ml.llm.template.models.gemini.GeminiChatMessage
+import com.intellij.ml.llm.template.models.gemini.GeminiRequestBody
 import com.intellij.ml.llm.template.models.ollama.OllamaBody
 import com.intellij.ml.llm.template.models.openai.OpenAiChatMessage
 import com.intellij.ml.llm.template.settings.LLMSettingsManager
-//import com.intellij.ml.llm.template.models.sendEditRequest
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
@@ -33,17 +32,17 @@ import com.intellij.psi.util.PsiUtilBase
 abstract class ApplyTransformationIntention(
 ) : IntentionAction {
     private val logger = Logger.getInstance("#com.intellij.ml.llm")
-    private fun extractBracketContent(str: String): String {
+    private fun extractBracketContent(ch: String, str: String): String {
         val sb = StringBuilder()
         var inBracket = false
 
         for (c in str) {
             when {
-                c == '$' && !inBracket -> {
+                (c.toString() == ch) && !inBracket -> {
                     inBracket = true
                     continue
                 }
-                c == '$' && inBracket -> break
+                (c.toString() == ch) && inBracket -> break
                 inBracket -> sb.append(c)
             }
         }
@@ -97,51 +96,57 @@ abstract class ApplyTransformationIntention(
 
     private fun transform(project: Project, text: String, editor: Editor, textRange: TextRange) {
         val settings = LLMSettingsManager.getInstance()
-        val satdType = extractBracketContent(text)
+        val satdType = extractBracketContent('$'.toString(), text)
 
         val instruction = getInstruction(project, editor, satdType) ?: return
         logger.info("Invoke transformation action with '$instruction' instruction for '$text'")
         val task =
             object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
                 override fun run(indicator: ProgressIndicator) {
-                    val prompt = "This code has SATDType {"+ extractBracketContent(text) + "}. Take a look at the code: {$text} and fix it."
-
+                    var prompt = ""
+                    if(satdType.isNotEmpty())
+                    {
+                         prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}."
+                    }
+//                    else
+//                    {
+//                         return null
+//                    }
                     var response:LLMBaseResponse? =    null
-                    var provider:LLMRequestProvider? = null
 
-                    val llmRequestProvider: Unit = when (settings.provider) {
+                    when (settings.provider) {
                         LLMSettingsManager.LLMProvider.GEMINI -> {
-                            provider = GeminiRequestProvider
+                            val provider = GeminiRequestProvider
+                            val messages = listOf(
+                                    GeminiChatMessage(role = "user", content = prompt ),
+                            )
 
-                            val part = GeminiParts(text = prompt)
-                            val contents = GeminiContents(parts = part)
-                            val body = GeminiBody(contents)
-
-                            print(contents.toString())
-
-                            response = sendGeminiRequest(project,
-                                    body,
+                            response = sendGeminiRequest(
+                                    project,
+                                    messages,
+                                    model = provider.chatModel,
                                     llmRequestProvider = provider
                             )
+
+//                            print("Here: $response")
                         }
                         LLMSettingsManager.LLMProvider.OLLAMA -> {
-                            provider = OllamaRequestProvider
+                            val provider = OllamaRequestProvider
 
-                            val ollama = OllamaBody(provider.chatModel, prompt, "false")
+                            val ollama = OllamaBody(provider.chatModel, prompt)
 
                             response = sendOllamaRequest(
                                     project,
                                     ollama.prompt,
-                                    stream = "false",
                                     llmRequestProvider = provider
                             )
                         }
                         LLMSettingsManager.LLMProvider.OPENAI -> {
-                            provider = GPTRequestProvider
+                            val provider = GPTRequestProvider
 
 
                             val messages = listOf(
-                                    OpenAiChatMessage(role = "user", content = "[$satdType, fix it]: $text"),
+                                    OpenAiChatMessage(role = "Developer", content = prompt ),
                             )
 
                             response = sendChatRequest(
