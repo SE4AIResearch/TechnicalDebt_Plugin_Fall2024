@@ -11,16 +11,9 @@
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 
-    <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.MyToolWindowFactory" id="MyToolWindow" anchor="bottom"/>
-    </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory" id="SATDToolWindow" anchor="bottom"/>
         <annotator language="JAVA" implementationClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
     </extensions>
-
-    <applicationListeners>
-        <listener class="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
-    </applicationListeners>
 </idea-plugin>
