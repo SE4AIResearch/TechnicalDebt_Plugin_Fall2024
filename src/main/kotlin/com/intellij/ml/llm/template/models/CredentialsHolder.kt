@@ -45,7 +45,7 @@ class CredentialsHolder {
     private fun getCredentials(key: String): String? {
         val attributes = createCredentialAttributes(key)
         val credentials = PasswordSafe.instance.get(attributes)
-        return credentials?.getPasswordAsString() ?: System.getenv(key)
+        return credentials?.getPasswordAsString()?:System.getenv(key)
     }
 
     private fun setCredentials(key: String, password: String) {

@@ -5,7 +5,7 @@ import com.intellij.ml.llm.template.models.openai.OpenAIChatRequest
 //import com.intellij.ml.llm.template.models.openai.OpenAICompletionRequest
 //import com.intellij.ml.llm.template.models.openai.OpenAIEditRequest
 
-data class LLMResponseChoice(val text: String, val finishReason: String?)
+data class LLMResponseChoice(val text: String, val finishReason: String)
 
 interface LLMBaseResponse {
     fun getSuggestions(): List<LLMResponseChoice>

@@ -106,7 +106,7 @@ abstract class ApplyTransformationIntention(
                     var prompt = ""
                     if(satdType.isNotEmpty())
                     {
-                         prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}."
+                         prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'."
                     }
 //                    else
 //                    {
