@@ -156,25 +156,30 @@ abstract class ApplyTransformationIntention(
                                     llmRequestProvider = provider
                             )
 
+
+
                         }
                     }
 
 
                         if (response != null) {
-                            val suggestions = response.getSuggestions()
+                            var suggestions = response.getSuggestions()
                             if (suggestions.isEmpty()) {
                                 logger.warn("No suggestions received for transformation.")
-                            }
-                            else {
-                                for (s in suggestions) {
-                                    println(s.text)
-                                }
                             }
                             response.getSuggestions().firstOrNull()?.let {
                                 logger.info("Suggested change: $it")
                                 invokeLater {
                                     WriteCommandAction.runWriteCommandAction(project) {
-                                        updateDocument(project, it.text, editor.document, textRange)
+                                        var updatedCode = it.text
+
+                                        if (updatedCode.contains("```")) {
+                                            updatedCode = updatedCode
+                                                .replace("```java", "")
+                                                .replace("```", "")
+                                        }
+
+                                        updateDocument(project, updatedCode, editor.document, textRange)
                                     }
                                 }
                             }
