@@ -184,20 +184,14 @@ abstract class ApplyTransformationIntention(
                             }
                             response.getSuggestions().firstOrNull()?.let {
                                 logger.info("Suggested change: $it")
-                                outputToSideWindow(it.text, editor, project, textRange) //HEREORHAOHRWI
-                                /*invokeLater {
-                                    WriteCommandAction.runWriteCommandAction(project) {
-                                        var updatedCode = it.text
+                                var updatedCode = it.text
 
-                                        if (updatedCode.contains("```")) {
-                                            updatedCode = updatedCode
-                                                .replace("```java", "")
-                                                .replace("```", "")
-                                        }
-
-                                        updateDocument(project, updatedCode, editor.document, textRange)
-                                    }
-                                }*/
+                                if (updatedCode.contains("```")) {
+                                    updatedCode = updatedCode
+                                        .replace("```java", "")
+                                        .replace("```", "")
+                                }
+                                outputToSideWindow(updatedCode, editor, project, textRange)
                             }
                         }
                     }
