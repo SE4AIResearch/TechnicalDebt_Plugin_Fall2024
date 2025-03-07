@@ -1,6 +1,5 @@
 package com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow;
 
-import com.intellij.execution.wsl.IpOrException;
 import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.LogicalPosition;
@@ -131,11 +130,11 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
         try {
             //If database file is created, initialize it.
             if(db.createNewFile()){
-                initialize(label, project.getName());
+                new initialize(label, project.getName(), button).execute();
             }
             //Else load the database if it exists
             else {
-                loadDatabase(tableModel, label, table, tableModel2, table2, project.getName());
+                new loadDatabase(tableModel, label, table, tableModel2, table2, project.getName(), button).execute();
             }
         } catch (IOException e){
             label.setText("Error: " + e.getMessage());
@@ -143,9 +142,9 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
         // Set button action
         button.addActionListener(e -> {
-            // Use ProgressManager to show progress while connecting to the database and fetching data
+            //TODO: Fix progress manager so that it actually waits for the task to finish
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
-                    () -> initializeAndConnectDatabase(tableModel, label, table, tableModel2, table2, project.getName()),
+                    () -> new initializeAndConnectDatabase(tableModel, label, table, tableModel2, table2, project.getName(), button).execute(),
                     "Fetching SATD Data",
                     false,
                     project
@@ -226,216 +225,288 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
     }
 
-    public void initialize(JBLabel label, String projectName){
-        String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
-        String databasePath =  PathManager.getConfigPath() + "/databases/" + projectName + ".db";
+    private static class initialize extends SwingWorker<Void, Void>{
+        private final JBLabel label;
+        private final String projectName;
+        private final JButton button;
 
-        InputStream inputStream = null;
-        try {
-            inputStream = new FileInputStream(sqlFilePath);
-        } catch (FileNotFoundException e){
-            label.setText("Error: " + e.getMessage());
+        public initialize(JBLabel label, String projectName, JButton button){
+            this.label = label;
+            this.projectName = projectName;
+            this.button = button;
         }
 
-        try {
-            Class.forName("org.sqlite.JDBC"); // This will throw an exception if the driver is not found
-            System.out.println("Driver loaded successfully.");
-        } catch (ClassNotFoundException e) {
-            label.setText("SQLite JDBC Driver not found. Check your classpath.");
-        }
+        @Override
+        protected Void doInBackground() throws Exception {
+            SwingUtilities.invokeLater(() ->button.setEnabled(false));
+            String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
+            String databasePath = PathManager.getConfigPath() + "/databases/" + projectName + ".db";
 
-        String url = "jdbc:sqlite:" + databasePath;
-
-        try (Connection conn = DriverManager.getConnection(url);
-             Statement stmt = conn.createStatement()) {
-
-            String sql = new String(inputStream.readAllBytes());
-            String[] queries = sql.split(";");
-
-            for (String query : queries) {
-                if (!query.trim().isEmpty()) {
-                    stmt.execute(query);
-                }
-            }
-
-            stmt.close();
-            conn.close();
-        } catch (Exception e){
-            label.setText("Error: " + e.getMessage());
-        }
-    }
-
-    public void loadDatabase(DefaultTableModel tableModel, JBLabel label, JTable table, DefaultTableModel tableModel2, JTable table2, String projectName){
-        tableModel.setRowCount(0);
-        tableModel2.setRowCount(0);
-        String databasePath =  PathManager.getConfigPath() + "/databases/" + projectName + ".db";
-
-        try {
-            Class.forName("org.sqlite.JDBC"); // This will throw an exception if the driver is not found
-            System.out.println("Driver loaded successfully.");
-        } catch (ClassNotFoundException e) {
-            label.setText("SQLite JDBC Driver not found. Check your classpath.");
-        }
-
-        String url = "jdbc:sqlite:" + databasePath;
-
-        try (Connection conn = DriverManager.getConnection(url);
-             Statement stmt = conn.createStatement()) {
-
-            String fetchQuery = "SELECT * FROM SATDInFile";
-            ResultSet rs = stmt.executeQuery(fetchQuery);
-
-            // Displaying query results
-            while (rs.next()) {
-                int f_id = rs.getInt("f_id");
-                String f_comment = rs.getString("f_comment"); // Replace with actual column name
-                String f_path = rs.getString("f_path");
-                int start_line = rs.getInt("start_line");
-                int end_line = rs.getInt("end_line");
-                String  containing_class = rs.getString("containing_class");
-                String containing_method = rs.getString("containing_method");
-                tableModel.addRow(new Object[]{f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method});
-            }
-
-            fetchQuery = "SELECT * FROM SATD";
-            rs = stmt.executeQuery(fetchQuery);
-
-            while (rs.next()) {
-                int satd_id = rs.getInt("satd_id");
-                int first_file = rs.getInt("first_file");
-                int second_file = rs.getInt("second_file");
-                String resolution = rs.getString("resolution");
-                tableModel2.addRow(new Object[]{satd_id, first_file, second_file, resolution});
-            }
-
-            adjustColumnWidths(table);
-
-            rs.close();
-            stmt.close();
-            conn.close();
-        } catch (Exception e){
-            label.setText("Error: " + e.getMessage());
-        }
-    }
-
-    public void initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, JTable table, DefaultTableModel tableModel2, JTable table2, String projectName) {
-        //Gets the sql filepath from sql folder
-        tableModel.setRowCount(0);
-        tableModel2.setRowCount(0);
-        String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
-        String databasePath =  PathManager.getConfigPath() + "/databases/" + projectName + ".db";
-        String libPath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/";
-
-        InputStream inputStream = null;
-        try {
-            inputStream = new FileInputStream(sqlFilePath);
-        } catch (FileNotFoundException e){
-            label.setText("Error: " + e.getMessage());
-        }
-        ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-        // Load the MySQL JDBC Driver
-        try {
-            Class.forName("org.sqlite.JDBC"); // This will throw an exception if the driver is not found
-            System.out.println("Driver loaded successfully.");
-        } catch (ClassNotFoundException e) {
-            label.setText("SQLite JDBC Driver not found. Check your classpath.");
-        }
-
-        String url = "jdbc:sqlite:" + databasePath;
-
-        try (Connection conn = DriverManager.getConnection(url);
-             Statement stmt = conn.createStatement()) {
-
-            label.setText("Connection successful!");
-
-            // Read and execute the SQL file
-            String sql = new String(inputStream.readAllBytes());
-            String[] queries = sql.split(";");
-
-            for (String query : queries) {
-                if (!query.trim().isEmpty()) {
-                    stmt.execute(query);
-                }
-            }
-
-            // Update progress
-            if (indicator != null) {
-                indicator.setText("Database initialization complete.");
-                indicator.setFraction(0.33);
+            InputStream inputStream = null;
+            try {
+                inputStream = new FileInputStream(sqlFilePath);
+            } catch (FileNotFoundException e) {
+                SwingUtilities.invokeLater(() ->label.setText("Error: " + e.getMessage()));
             }
 
             try {
-                ProcessBuilder processBuilder = new ProcessBuilder(
-                        "java",
-                        "--add-opens",
-                        "java.base/java.lang=ALL-UNNAMED",
-                        "-jar",
-                        (libPath + "target/satd-analyzer-jar-with-all-dependencies.jar"),
-                        "-r",
-                        (libPath + "test_repo.csv"),
-                        "-d",
-                        (databasePath)
-                );
-
-                processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-                processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-
-                Process process = processBuilder.start();
-
-                int exitCode = process.waitFor();
-                System.out.println("Exit code:" + exitCode);
-            } catch(IOException | InterruptedException e){
-                e.printStackTrace();
+                Class.forName("org.sqlite.JDBC"); // This will throw an exception if the driver is not found
+                System.out.println("Driver loaded successfully.");
+            } catch (ClassNotFoundException e) {
+                SwingUtilities.invokeLater(() ->label.setText("SQLite JDBC Driver not found. Check your classpath."));
             }
 
-            // Update progress
-            if (indicator != null) {
-                indicator.setText("Database up to Date.");
-                indicator.setFraction(0.66);
+            String url = "jdbc:sqlite:" + databasePath;
+
+            try (Connection conn = DriverManager.getConnection(url);
+                 Statement stmt = conn.createStatement()) {
+
+                String sql = new String(inputStream.readAllBytes());
+                String[] queries = sql.split(";");
+
+                for (String query : queries) {
+                    if (!query.trim().isEmpty()) {
+                        stmt.execute(query);
+                    }
+                }
+
+                stmt.close();
+                conn.close();
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() ->label.setText("Error: " + e.getMessage()));
             }
 
-            String fetchQuery = "SELECT * FROM SATDInFile";
-            ResultSet rs = stmt.executeQuery(fetchQuery);
+            SwingUtilities.invokeLater(() ->button.setEnabled(true));
+            return null;
+        }
+    }
 
-            // Displaying query results
-            while (rs.next()) {
-                int f_id = rs.getInt("f_id");
-                String f_comment = rs.getString("f_comment"); // Replace with actual column name
-                String f_path = rs.getString("f_path");
-                int start_line = rs.getInt("start_line");
-                int end_line = rs.getInt("end_line");
-                String  containing_class = rs.getString("containing_class");
-                String containing_method = rs.getString("containing_method");
-                tableModel.addRow(new Object[]{f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method});
+    private static class loadDatabase extends SwingWorker<Void, Void> {
+        private final DefaultTableModel tableModel;
+        private final DefaultTableModel tableModel2;
+        private final JBLabel label;
+        private final JTable table;
+        private final JTable table2;
+        private final String projectName;
+        private final JButton button;
+
+
+        public loadDatabase(DefaultTableModel tableModel, JBLabel label, JTable table, DefaultTableModel tableModel2, JTable table2, String projectName, JButton button){
+            this.tableModel = tableModel;
+            this.tableModel2 = tableModel2;
+            this.label = label;
+            this.table = table;
+            this.table2 = table2;
+            this.projectName = projectName;
+            this.button = button;
+        }
+
+        @Override
+        protected Void doInBackground() throws Exception {
+            SwingUtilities.invokeLater(() ->button.setEnabled(false));
+            SwingUtilities.invokeLater(() ->tableModel.setRowCount(0));
+            SwingUtilities.invokeLater(() ->tableModel2.setRowCount(0));
+            String databasePath = PathManager.getConfigPath() + "/databases/" + projectName + ".db";
+
+            try {
+                Class.forName("org.sqlite.JDBC"); // This will throw an exception if the driver is not found
+                System.out.println("Driver loaded successfully.");
+            } catch (ClassNotFoundException e) {
+                SwingUtilities.invokeLater(() ->label.setText("SQLite JDBC Driver not found. Check your classpath."));
             }
 
-            fetchQuery = "SELECT * FROM SATD";
-            rs = stmt.executeQuery(fetchQuery);
+            String url = "jdbc:sqlite:" + databasePath;
 
-            int i = 0;
-            while (rs.next()) {
-                int satd_id = rs.getInt("satd_id");
-                int first_file = rs.getInt("first_file");
-                int second_file = rs.getInt("second_file");
-                String resolution = rs.getString("resolution");
-                tableModel2.addRow(new Object[]{satd_id, first_file, second_file, resolution});
+            try (Connection conn = DriverManager.getConnection(url);
+                 Statement stmt = conn.createStatement()) {
+
+                String fetchQuery = "SELECT * FROM SATDInFile";
+                ResultSet rs = stmt.executeQuery(fetchQuery);
+
+                // Displaying query results
+                while (rs.next()) {
+                    int f_id = rs.getInt("f_id");
+                    String f_comment = rs.getString("f_comment"); // Replace with actual column name
+                    String f_path = rs.getString("f_path");
+                    int start_line = rs.getInt("start_line");
+                    int end_line = rs.getInt("end_line");
+                    String containing_class = rs.getString("containing_class");
+                    String containing_method = rs.getString("containing_method");
+                    SwingUtilities.invokeLater(() -> tableModel.addRow(new Object[]{f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method}));
+                }
+
+                fetchQuery = "SELECT * FROM SATD";
+                rs = stmt.executeQuery(fetchQuery);
+
+                while (rs.next()) {
+                    int satd_id = rs.getInt("satd_id");
+                    int first_file = rs.getInt("first_file");
+                    int second_file = rs.getInt("second_file");
+                    String resolution = rs.getString("resolution");
+                    SwingUtilities.invokeLater(() -> tableModel2.addRow(new Object[]{satd_id, first_file, second_file, resolution}));
+                }
+
+                SwingUtilities.invokeLater(() ->adjustColumnWidths(table));
+
+                rs.close();
+                stmt.close();
+                conn.close();
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() ->label.setText("Error: " + e.getMessage()));
             }
 
-            adjustColumnWidths(table);
-            //adjustColumnWidths(table2);
+            SwingUtilities.invokeLater(() ->button.setEnabled(true));
+            return null;
+        }
+    }
 
-            // Update progress
-            if (indicator != null) {
-                indicator.setText("Data fetching complete.");
-                indicator.setFraction(1.0);
-            };
+    private static class initializeAndConnectDatabase extends SwingWorker<Void, Void> {
+        private final DefaultTableModel tableModel;
+        private final DefaultTableModel tableModel2;
+        private final JBLabel label;
+        private final JTable table;
+        private final JTable table2;
+        private final String projectName;
+        private final JButton button;
 
-            // Close resources
-            rs.close();
-            stmt.close();
-            conn.close();
-        } catch (Exception e) {
-            label.setText("Connection failed: " + e.getMessage());
+
+        initializeAndConnectDatabase(DefaultTableModel tableModel, JBLabel label, JTable table, DefaultTableModel tableModel2, JTable table2, String projectName, JButton button){
+            this.tableModel = tableModel;
+            this.tableModel2 = tableModel2;
+            this.label = label;
+            this.table = table;
+            this.table2 = table2;
+            this.projectName = projectName;
+            this.button = button;
+        }
+
+        @Override
+        protected Void doInBackground() throws Exception {
+            //Gets the sql filepath from sql folder
+            SwingUtilities.invokeLater(() ->button.setEnabled(false));
+            SwingUtilities.invokeLater(() ->tableModel.setRowCount(0));
+            SwingUtilities.invokeLater(() ->tableModel2.setRowCount(0));
+            String sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql";
+            String databasePath = PathManager.getConfigPath() + "/databases/" + projectName + ".db";
+            String libPath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/";
+
+            InputStream inputStream = null;
+            try {
+                inputStream = new FileInputStream(sqlFilePath);
+            } catch (FileNotFoundException e) {
+                SwingUtilities.invokeLater(() ->label.setText("Error: " + e.getMessage()));
+            }
+
+            ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+
+            // Load the MySQL JDBC Driver
+            try {
+                Class.forName("org.sqlite.JDBC"); // This will throw an exception if the driver is not found
+                System.out.println("Driver loaded successfully.");
+            } catch (ClassNotFoundException e) {
+                SwingUtilities.invokeLater(() ->label.setText("SQLite JDBC Driver not found. Check your classpath."));
+            }
+
+            String url = "jdbc:sqlite:" + databasePath;
+
+            try (Connection conn = DriverManager.getConnection(url);
+                 Statement stmt = conn.createStatement()) {
+
+                SwingUtilities.invokeLater(() ->label.setText("Connection successful!"));
+
+                // Read and execute the SQL file
+                String sql = new String(inputStream.readAllBytes());
+                String[] queries = sql.split(";");
+
+                for (String query : queries) {
+                    if (!query.trim().isEmpty()) {
+                        stmt.execute(query);
+                    }
+                }
+
+                // Update progress
+                if (indicator != null) {
+                    SwingUtilities.invokeLater(() ->indicator.setText("Database initialization complete."));
+                    SwingUtilities.invokeLater(() ->indicator.setFraction(0.33));
+                }
+
+                try {
+                    ProcessBuilder processBuilder = new ProcessBuilder(
+                            "java",
+                            "--add-opens",
+                            "java.base/java.lang=ALL-UNNAMED",
+                            "-jar",
+                            (libPath + "target/satd-analyzer-jar-with-all-dependencies.jar"),
+                            "-r",
+                            (libPath + "test_repo.csv"),
+                            "-d",
+                            (databasePath)
+                    );
+
+                    processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+                    processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+                    Process process = processBuilder.start();
+
+                    int exitCode = process.waitFor();
+                    System.out.println("Exit code:" + exitCode);
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                // Update progress
+                if (indicator != null) {
+                    SwingUtilities.invokeLater(() ->indicator.setText("Database up to Date."));
+                    SwingUtilities.invokeLater(() ->indicator.setFraction(0.66));
+                }
+
+                String fetchQuery = "SELECT * FROM SATDInFile";
+                ResultSet rs = stmt.executeQuery(fetchQuery);
+
+                // Displaying query results
+                while (rs.next()) {
+                    int f_id = rs.getInt("f_id");
+                    String f_comment = rs.getString("f_comment"); // Replace with actual column name
+                    String f_path = rs.getString("f_path");
+                    int start_line = rs.getInt("start_line");
+                    int end_line = rs.getInt("end_line");
+                    String containing_class = rs.getString("containing_class");
+                    String containing_method = rs.getString("containing_method");
+                    SwingUtilities.invokeLater(() ->tableModel.addRow(new Object[]{f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method}));
+                }
+
+                fetchQuery = "SELECT * FROM SATD";
+                rs = stmt.executeQuery(fetchQuery);
+
+                int i = 0;
+                while (rs.next()) {
+                    int satd_id = rs.getInt("satd_id");
+                    int first_file = rs.getInt("first_file");
+                    int second_file = rs.getInt("second_file");
+                    String resolution = rs.getString("resolution");
+                    SwingUtilities.invokeLater(() ->tableModel2.addRow(new Object[]{satd_id, first_file, second_file, resolution}));
+                }
+
+                SwingUtilities.invokeLater(() ->adjustColumnWidths(table));
+                //adjustColumnWidths(table2);
+
+                // Update progress
+                if (indicator != null) {
+                    SwingUtilities.invokeLater(() ->indicator.setText("Data fetching complete."));
+                    SwingUtilities.invokeLater(() ->indicator.setFraction(1.0));
+                }
+                ;
+
+                // Close resources
+                rs.close();
+                stmt.close();
+                conn.close();
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() ->label.setText("Connection failed: " + e.getMessage()));
+            }
+
+            SwingUtilities.invokeLater(() -> button.setEnabled(true));
+            return null;
         }
     }
 
