@@ -2,6 +2,8 @@ package com.intellij.ml.llm.template.models.openai
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.intellij.ml.llm.template.models.AuthorizationException
+import com.intellij.ml.llm.template.models.CredentialsHolder
 import com.intellij.ml.llm.template.models.LLMBaseRequest
 import com.intellij.util.io.HttpRequests
 import java.net.HttpURLConnection

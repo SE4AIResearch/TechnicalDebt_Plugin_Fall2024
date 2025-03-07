@@ -16,6 +16,7 @@ import javax.swing.DefaultComboBoxModel
 class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurable.display.name")) {
     private val settings = service<LLMSettingsManager>()
 
+    private lateinit var geminiAiKeyRow: Row
     private lateinit var openAiKeyRow: Row
     private lateinit var openAiOrgRow: Row
     private lateinit var ollamaServerRow: Row
@@ -47,6 +48,12 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
 
             ollamaServerRow.visible(false)
 
+            geminiAiKeyRow = row(LLMBundle.message("settings.configurable.gemini.key.label")) {
+                passwordField().bindText(
+                        settings::getGeminiKey, settings::setGeminiKey
+                )
+            }
+
             row(LLMBundle.message("settings.configurable.llm.provider.label")) {
                 providerComboBox = comboBox(
                     DefaultComboBoxModel(LLMSettingsManager.LLMProvider.values())
@@ -63,25 +70,21 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
                 }
             }
 
-
-
-
-
         }
 
         updateVisibility()
     }
 
     fun updateVisibility() {
+        val isGemini = settings.provider == LLMSettingsManager.LLMProvider.GEMINI
         val isOpenAi = settings.provider == LLMSettingsManager.LLMProvider.OPENAI
         val isOllama = settings.provider == LLMSettingsManager.LLMProvider.OLLAMA
+        geminiAiKeyRow.visible(isGemini)
         openAiKeyRow.visible(isOpenAi)
         openAiOrgRow.visible(isOpenAi)
         ollamaServerRow.visible(isOllama)
 
         apply()
-
-
     }
 
     override fun apply() {

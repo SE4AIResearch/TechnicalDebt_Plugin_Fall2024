@@ -3,9 +3,9 @@
 package com.intellij.ml.llm.template.models
 
 import com.intellij.ml.llm.template.LLMBundle
+import com.intellij.ml.llm.template.models.gemini.GeminiChatMessage
+import com.intellij.ml.llm.template.models.gemini.GeminiRequestBody
 import com.intellij.ml.llm.template.models.ollama.OllamaBody
-import com.intellij.ml.llm.template.models.ollama.OllamaRequest
-import com.intellij.ml.llm.template.models.openai.AuthorizationException
 import com.intellij.ml.llm.template.models.openai.OpenAiChatMessage
 import com.intellij.ml.llm.template.models.openai.OpenAiChatRequestBody
 import com.intellij.ml.llm.template.settings.LLMSettingsManager
@@ -69,15 +69,30 @@ private val logger = Logger.getInstance("#com.intellij.ml.llm.template.models")
 //    return sendRequest(project, request)
 //}
 
+
+fun sendGeminiRequest(
+        project: Project,
+        messages: List<GeminiChatMessage>,
+        model: String,
+        llmRequestProvider: LLMRequestProvider = GeminiRequestProvider,
+): LLMBaseResponse? {
+    val request =
+            llmRequestProvider.createGeminiRequest(
+                    GeminiRequestBody(
+                            model = llmRequestProvider.chatModel,
+                            messages = messages
+                    )
+            )
+    return sendRequest(project, request)
+}
 fun sendOllamaRequest(
     project: Project,
     prompt: String,
-    stream: String,
     llmRequestProvider: LLMRequestProvider = OllamaRequestProvider,
 
 ): LLMBaseResponse? {
     val request =
-        llmRequestProvider.createOllamaRequest(OllamaBody("llama2", prompt = prompt, stream = "false"))
+        llmRequestProvider.createOllamaRequest(OllamaBody("llama2", prompt = prompt))
     return sendRequest(project, request)
 }
 
