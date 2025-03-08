@@ -10,6 +10,9 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.layout.ComponentPredicate
 import javax.swing.DefaultComboBoxModel
+import javax.swing.JTextArea
+import javax.swing.JScrollPane
+
 
 
 
@@ -19,6 +22,12 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
     private lateinit var openAiKeyRow: Row
     private lateinit var openAiOrgRow: Row
     private lateinit var ollamaServerRow: Row
+
+    private val outputTextArea = JTextArea().apply {
+        isEditable = false  // Prevent user input
+        lineWrap = true
+        wrapStyleWord = true
+    }
 
 
 
@@ -84,6 +93,10 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
 
     }
 
+
+    fun updateOutput(output: String) {
+        outputTextArea.text = output
+    }
     override fun apply() {
         super.apply()
         updateVisibility()

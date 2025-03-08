@@ -26,10 +26,24 @@ import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
 import java.util.*
+import com.intellij.ml.llm.template.ui.LLMOutputToolWindow
 
 @Suppress("UnstableApiUsage")
 abstract class ApplyTransformationIntention(
 ) : IntentionAction {
+
+    companion object{
+        fun updateDocument(project: Project, suggestion: String, document: Document, textRange: TextRange) {
+            document.replaceString(textRange.startOffset, textRange.endOffset, suggestion)
+            PsiDocumentManager.getInstance(project).commitDocument(document)
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
+            psiFile?.let {
+                val reformatRange = TextRange(textRange.startOffset, textRange.startOffset + suggestion.length)
+                CodeStyleManager.getInstance(project).reformatText(it, listOf(reformatRange))
+            }
+        }
+    }
+
     private val logger = Logger.getInstance("#com.intellij.ml.llm")
     private fun extractBracketContent(str: String): String {
         val sb = StringBuilder()
@@ -174,11 +188,12 @@ abstract class ApplyTransformationIntention(
                             }
                             response.getSuggestions().firstOrNull()?.let {
                                 logger.info("Suggested change: $it")
-                                invokeLater {
+                                outputToSideWindow(it.text, editor, project, textRange) //HEREORHAOHRWI
+                                /*invokeLater {
                                     WriteCommandAction.runWriteCommandAction(project) {
                                         updateDocument(project, it.text, editor.document, textRange)
                                     }
-                                }
+                                }*/
                             }
                         }
                     }
@@ -189,13 +204,12 @@ abstract class ApplyTransformationIntention(
 
     abstract fun getInstruction(project: Project, editor: Editor, satdType: String): String?
 
-    private fun updateDocument(project: Project, suggestion: String, document: Document, textRange: TextRange) {
-        document.replaceString(textRange.startOffset, textRange.endOffset, suggestion)
-        PsiDocumentManager.getInstance(project).commitDocument(document)
-        val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
-        psiFile?.let {
-            val reformatRange = TextRange(textRange.startOffset, textRange.startOffset + suggestion.length)
-            CodeStyleManager.getInstance(project).reformatText(it, listOf(reformatRange))
+
+
+    private fun outputToSideWindow(content: String, editor: Editor, project: Project, textRange: TextRange) {
+
+        invokeLater {
+            LLMOutputToolWindow.updateOutput(content, editor, project, textRange)
         }
     }
 
