@@ -1,0 +1,26 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <id>com.github.SE4AIResearch.technicaldebt_plugin_fall2024</id>
+    <name>Technical Debt Tool</name>
+    <vendor>SE4AIResearch</vendor>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.java</depends>
+
+    <resource-bundle>messages.MyBundle</resource-bundle>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.MyToolWindowFactory" id="MyToolWindow" anchor="bottom"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory" id="SATDToolWindow" anchor="bottom"/>
+        <annotator language="JAVA" implementationClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
+    </extensions>
+
+    <applicationListeners>
+        <listener class="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
+    </applicationListeners>
+</idea-plugin>
