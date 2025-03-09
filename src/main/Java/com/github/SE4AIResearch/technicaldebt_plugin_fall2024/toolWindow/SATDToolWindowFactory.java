@@ -215,8 +215,9 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
 
     public void writeTestRepo (String path, Project project){
         String gitUrl = getGitHubUrl(project);
-        gitUrl = gitUrl;
-                // = gitUrl.substring(0, gitUrl.length()-4);
+        if(gitUrl.endsWith(".git")) {
+            gitUrl = gitUrl.substring(0, gitUrl.length() - 4);
+        }
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
             // This will empty the file and write the new content
             writer.write(gitUrl);
