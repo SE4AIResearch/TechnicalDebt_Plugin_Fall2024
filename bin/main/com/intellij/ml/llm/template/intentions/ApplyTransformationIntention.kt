@@ -161,7 +161,7 @@ abstract class ApplyTransformationIntention(
 
 
                             val messages = listOf(
-                                    OpenAiChatMessage(role = "Developer", content = prompt ),
+                                    OpenAiChatMessage(role = "user", content = prompt ),
                             )
 
                             response = sendChatRequest(
