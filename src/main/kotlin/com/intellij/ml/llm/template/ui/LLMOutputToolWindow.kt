@@ -21,8 +21,10 @@ import javax.swing.JPanel
 import javax.swing.BorderFactory
 import javax.swing.SwingUtilities
 import com.intellij.ml.llm.template.intentions.ApplyTransformationIntention
+import com.intellij.ml.llm.template.settings.LLMSettingsManager
 import javax.swing.JButton
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.editor.colors.EditorColorsManager
@@ -39,12 +41,14 @@ import com.intellij.ui.EditorTextField
 
 class LLMOutputToolWindow : ToolWindowFactory {
     companion object {
+        private val settings = service<LLMSettingsManager>()
         private var textArea: JBTextArea? = null
         private var applyButton: JButton? = null
         private var latestEditor: Editor? = null
         private var latestProject: Project? = null
         private var latestTextRange: TextRange? = null
         private var editorField: EditorTextField? = null
+        private var llmLabel: JLabel? = null
 
         fun updateOutput(text: String, editor: Editor, project: Project, textRange: TextRange) {
             //(editorField as? EditorTextField)?.setText(text)
@@ -107,6 +111,14 @@ class LLMOutputToolWindow : ToolWindowFactory {
         editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
     }
 
+    fun updateLLMType() {
+        SwingUtilities.invokeLater {
+            llmLabel?.text = "Active LLM: ${settings.provider}"
+            llmLabel?.revalidate()
+            llmLabel?.repaint()
+        }
+    }
+
 
     private fun createCodeEditor(project: Project): EditorTextField{
         val factory = EditorFactory.getInstance()
@@ -129,6 +141,8 @@ class LLMOutputToolWindow : ToolWindowFactory {
                     font = font.deriveFont(14f)
                 }
                 add(pageLabel)
+
+
             }
             add(topPanel, BorderLayout.NORTH)
 
@@ -140,6 +154,13 @@ class LLMOutputToolWindow : ToolWindowFactory {
                 preferredSize = Dimension(400, 300)
             }
 
+            llmLabel = JLabel("Active LLM: ${settings.provider}").apply{
+                font = font.deriveFont(14f)
+            }
+            add(llmLabel)
+
+
+
             val copyButton = JButton("📋").apply {
                 toolTipText = "Copy to Clipboard"
                 border = BorderFactory.createEmptyBorder()
@@ -148,8 +169,21 @@ class LLMOutputToolWindow : ToolWindowFactory {
                     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
                     val selection = StringSelection(editorField?.text ?: "")
                     clipboard.setContents(selection, selection)
+
+
+                    background = Color.LIGHT_GRAY
+                    isContentAreaFilled = true
+
+
+                    SwingUtilities.invokeLater {
+                        Thread.sleep(200)  // Delay for visual feedback
+                        isContentAreaFilled = false
+                        repaint()
+                    }
                 }
             }
+
+
 
             val centerPanel = JPanel(BorderLayout()).apply {
                 add(scrollPane, BorderLayout.CENTER)

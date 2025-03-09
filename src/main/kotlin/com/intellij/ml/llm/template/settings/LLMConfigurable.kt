@@ -1,6 +1,7 @@
 package com.intellij.ml.llm.template.settings
 
 import com.intellij.ml.llm.template.LLMBundle
+import com.intellij.ml.llm.template.ui.LLMOutputToolWindow
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.ShowSettingsUtil
@@ -18,6 +19,7 @@ import javax.swing.JScrollPane
 
 class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurable.display.name")) {
     private val settings = service<LLMSettingsManager>()
+    private val window = LLMOutputToolWindow()
 
     private lateinit var geminiAiKeyRow: Row
     private lateinit var openAiKeyRow: Row
@@ -57,11 +59,14 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
 
             ollamaServerRow.visible(false)
 
+
             geminiAiKeyRow = row(LLMBundle.message("settings.configurable.gemini.key.label")) {
                 passwordField().bindText(
                         settings::getGeminiKey, settings::setGeminiKey
                 )
             }
+
+            geminiAiKeyRow.visible(false)
 
             row(LLMBundle.message("settings.configurable.llm.provider.label")) {
                 providerComboBox = comboBox(
@@ -103,8 +108,9 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
         outputTextArea.text = output
     }
     override fun apply() {
+        window.updateLLMType()
         super.apply()
-        updateVisibility()
+        //updateVisibility()
     }
 }
 
