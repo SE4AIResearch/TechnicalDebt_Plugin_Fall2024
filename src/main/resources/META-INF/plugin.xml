@@ -4,6 +4,9 @@
     <vendor>SE4AIResearch</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.java</depends>
+    <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationConfigurable
@@ -26,28 +29,21 @@
             <categoryKey>intention.category.codex</categoryKey>
         </intentionAction>
 
-        <toolWindow id="LLM Output" anchor="right" factoryClass="com.intellij.ml.llm.template.ui.LLMOutputToolWindow"/>
 
+        <toolWindow id="LLM Output" anchor="bottom" factoryClass="com.intellij.ml.llm.template.ui.LLMOutputToolWindow"/>
 
         <registryKey defaultValue="false"
                      description="If enabled, emulates requests instead of using OpenAI API. Used for debug purposes."
                      key="llm.for.code.enable.mock.requests"/>
 
         <notificationGroup id="AI notification group" displayType="STICKY_BALLOON" bundle="messages.LLMBundle" key="notification.group.name"/>
-
+    </extensions>
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
-
-
-    <depends>com.intellij.modules.platform</depends>
-
-    <depends>com.intellij.modules.lang</depends>
-    <depends>com.intellij.java</depends>
-
-    <resource-bundle>messages.MyBundle</resource-bundle>
-
-
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory" id="SATDToolWindow" anchor="bottom"/>
         <annotator language="JAVA" implementationClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
     </extensions>
+
+
+
 </idea-plugin>

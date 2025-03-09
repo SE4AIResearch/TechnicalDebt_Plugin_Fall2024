@@ -19,17 +19,6 @@ kotlin {
     jvmToolchain(17)
 }
 
-intellij {
-    pluginName.set(properties("pluginName"))
-    version.set(properties("platformVersion"))
-    type.set(properties("platformType"))
-
-    plugins.set(properties("platformPlugins").split(',').map(String::trim).filter(String::isNotEmpty))
-}
-
-changelog {
-    groups.set(emptyList())
-    repositoryUrl.set(properties("pluginRepositoryUrl"))
 // Configure project's dependencies
 repositories {
     mavenCentral()
@@ -48,7 +37,7 @@ repositories {
         defaultRepositories()
     }
 
-    flatDir{
+    flatDir {
         dirs("lib")
     }
 }
@@ -157,108 +146,77 @@ tasks {
         gradleVersion = providers.gradleProperty("gradleVersion").get()
     }
 
-    buildPlugin {
-            archiveFileName.set("llm-integration-template.zip")
-    }
-
-    patchPluginXml {
-        version.set(properties("pluginVersion"))
-        sinceBuild.set(properties("pluginSinceBuild"))
-        untilBuild.set(properties("pluginUntilBuild"))
-
-        pluginDescription.set(
-            file("README.md").readText().lines().run {
-                val start = "<!-- Plugin description -->"
-                val end = "<!-- Plugin description end -->"
-
-                if (!containsAll(listOf(start, end))) {
-                    throw GradleException("Plugin description section not found in README.md:\n$start ... $end")
-                }
-                subList(indexOf(start) + 1, indexOf(end))
-            }.joinToString("\n").let { markdownToHTML(it) }
-        )
-
-        changeNotes.set(provider {
-            with(changelog) {
-                renderItem(
-                    getOrNull(properties("pluginVersion")) ?: getLatest(),
-                    Changelog.OutputType.HTML,
-                )
-            }
-        })   
-    }
-
     runIde {
         val sandBoxPath = project.buildDir.resolve("idea-sandbox/" + providers.gradleProperty("platformType").get() + "-" + providers.gradleProperty("platformVersion").get() + "/plugins/${project.name}")
-        val targetPath = sandBoxPath.resolve("SATDBailiff/target")
-        val libPath = sandBoxPath.resolve("SATDBailiff")
-        val sqlPath = sandBoxPath.resolve("sql")
+            val targetPath = sandBoxPath.resolve("SATDBailiff/target")
+            val libPath = sandBoxPath.resolve("SATDBailiff")
+            val sqlPath = sandBoxPath.resolve("sql")
 
-        doFirst {
-            if (!(libPath.exists())) {
-                copy {
-                    from(file("SATDBailiff"))
-                    into(libPath)
+                    doFirst {
+                if (!(libPath.exists())) {
+                    copy {
+                        from(file("SATDBailiff"))
+                        into(libPath)
+                    }
+                }
+
+                if (!(targetPath.exists())) {
+                    copy {
+                        from(file("SATDBailiff/target"))
+                        into(targetPath)
+                    }
+                }
+
+                if (!(sqlPath.exists())) {
+                    copy {
+                        from(file("sql"))
+                        into(sqlPath)
+                    }
                 }
             }
+        }
 
-            if (!(targetPath.exists())) {
-                copy {
-                    from(file("SATDBailiff/target"))
-                    into(targetPath)
+                //Exclude the Database and sql file from the jar
+                jar {
+            exclude("SATDBailiff/**")
+            exclude("sql/**")
+        }
+
+                //Makes sure the plugin build contains these directories
+                buildPlugin {
+            from("SATDBailiff") {
+                into("SATDBailiff")
+            }
+            from("sql") {
+                into("sql")
+            }
+            from("SATDBailiff/target") {
+                into("SATDBailiff/target")
+            }
+        }
+
+                publishPlugin {
+            dependsOn(patchChangelog)
+        }
+    }
+
+    intellijPlatformTesting {
+        runIde {
+            register("runIdeForUiTests") {
+                task {
+                    jvmArgumentProviders += CommandLineArgumentProvider {
+                        listOf(
+                            "-Drobot-server.port=8082",
+                            "-Dide.mac.message.dialogs.as.sheets=false",
+                            "-Djb.privacy.policy.text=<!--999.999-->",
+                            "-Djb.consents.confirmation.enabled=false",
+                        )
+                    }
+                }
+
+                plugins {
+                    robotServerPlugin()
                 }
             }
-
-            if (!(sqlPath.exists())) {
-                copy {
-                    from(file("sql"))
-                    into(sqlPath)
-                }
-            }
         }
     }
-
-    //Exclude the Database and sql file from the jar
-    jar{
-        exclude("SATDBailiff/**")
-        exclude("sql/**")
-    }
-
-    //Makes sure the plugin build contains these directories
-    buildPlugin{
-        from("SATDBailiff"){
-            into("SATDBailiff")
-        }
-        from("sql"){
-            into("sql")
-        }
-        from("SATDBailiff/target"){
-            into("SATDBailiff/target")
-        }
-    }
-
-    publishPlugin {
-        dependsOn(patchChangelog)
-    }
-}
-
-intellijPlatformTesting {
-    runIde {
-        register("runIdeForUiTests") {
-            task {
-                jvmArgumentProviders += CommandLineArgumentProvider {
-                    listOf(
-                        "-Drobot-server.port=8082",
-                        "-Dide.mac.message.dialogs.as.sheets=false",
-                        "-Djb.privacy.policy.text=<!--999.999-->",
-                        "-Djb.consents.confirmation.enabled=false",
-                    )
-                }
-            }
-
-            plugins {
-                robotServerPlugin()
-            }
-        }
-    }
-}
