@@ -23,6 +23,7 @@ open class OpenAIBaseRequest<Body>(path: String, body: Body) : LLMBaseRequest<Bo
                 }
             }
             .connect { request ->
+                println("Here: ${GsonBuilder().create().toJson(body)}")
                 request.write(GsonBuilder().create().toJson(body))
 
                 val responseCode = (request.connection as HttpURLConnection).responseCode
