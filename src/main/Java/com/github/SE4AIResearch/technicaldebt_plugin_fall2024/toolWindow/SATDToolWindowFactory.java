@@ -24,6 +24,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
+import com.intellij.openapi.ui.Messages;
 
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -134,6 +135,9 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
             }
             //Else load the database if it exists
             else {
+                String title = "Warning";
+                String message = "Loading existing SATD data for this  project. May not include most recent commits.";
+                Messages.showWarningDialog(message, title);
                 new loadDatabase(tableModel, label, table, tableModel2, table2, project.getName(), button).execute();
             }
         } catch (IOException e){
@@ -159,9 +163,14 @@ public class SATDToolWindowFactory implements ToolWindowFactory, DumbAware {
     private void navigateToCode(Project project, int lineNumber, String path) {
         String homePath = project.getBasePath();
         path = homePath + "/" + path;
+        int lastSlashIndex = path.lastIndexOf('/');
+        String fileName = path.substring(lastSlashIndex + 1);
         VirtualFile file = LocalFileSystem.getInstance().findFileByPath(path);
         if (file == null) {
-            System.out.println("File not found: " + path);
+            System.out.println("File " + fileName  + " not found: " + path);
+            String message = "File not found at given path";
+            String title = "Error";
+            Messages.showErrorDialog(message, title);
             return;
         }
         FileEditorManager.getInstance(project).openFile(file, true);
