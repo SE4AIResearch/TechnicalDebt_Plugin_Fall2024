@@ -27,10 +27,25 @@ import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
+import java.util.*
+import com.intellij.ml.llm.template.ui.LLMOutputToolWindow
 
 @Suppress("UnstableApiUsage")
 abstract class ApplyTransformationIntention(
 ) : IntentionAction {
+
+    companion object{
+        fun updateDocument(project: Project, suggestion: String, document: Document, textRange: TextRange) {
+            document.replaceString(textRange.startOffset, textRange.endOffset, suggestion)
+            PsiDocumentManager.getInstance(project).commitDocument(document)
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
+            psiFile?.let {
+                val reformatRange = TextRange(textRange.startOffset, textRange.startOffset + suggestion.length)
+                CodeStyleManager.getInstance(project).reformatText(it, listOf(reformatRange))
+            }
+        }
+    }
+
     private val logger = Logger.getInstance("#com.intellij.ml.llm")
     private fun extractBracketContent(ch: String, str: String): String {
         val sb = StringBuilder()
@@ -169,19 +184,14 @@ abstract class ApplyTransformationIntention(
                             }
                             response.getSuggestions().firstOrNull()?.let {
                                 logger.info("Suggested change: $it")
-                                invokeLater {
-                                    WriteCommandAction.runWriteCommandAction(project) {
-                                        var updatedCode = it.text
+                                var updatedCode = it.text
 
-                                        if (updatedCode.contains("```")) {
-                                            updatedCode = updatedCode
-                                                .replace("```java", "")
-                                                .replace("```", "")
-                                        }
-
-                                        updateDocument(project, updatedCode, editor.document, textRange)
-                                    }
+                                if (updatedCode.contains("```")) {
+                                    updatedCode = updatedCode
+                                        .replace("```java", "")
+                                        .replace("```", "")
                                 }
+                                outputToSideWindow(updatedCode, editor, project, textRange)
                             }
                         }
                     }
@@ -193,13 +203,12 @@ abstract class ApplyTransformationIntention(
 
     fun getInstruction(project: Project, editor: Editor, satdType: String) {}
 
-private fun updateDocument(project: Project, suggestion: String, document: Document, textRange: TextRange) {
-        document.replaceString(textRange.startOffset, textRange.endOffset, suggestion)
-        PsiDocumentManager.getInstance(project).commitDocument(document)
-        val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
-        psiFile?.let {
-            val reformatRange = TextRange(textRange.startOffset, textRange.startOffset + suggestion.length)
-            CodeStyleManager.getInstance(project).reformatText(it, listOf(reformatRange))
+
+
+    private fun outputToSideWindow(content: String, editor: Editor, project: Project, textRange: TextRange) {
+
+        invokeLater {
+            LLMOutputToolWindow.updateOutput(content, editor, project, textRange)
         }
     }
 
