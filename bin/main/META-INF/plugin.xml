@@ -52,7 +52,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory" id="SATDToolWindow" anchor="bottom"/>
-        <annotator language="JAVA" implementationClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
+        <annotator language="kotlin" implementationClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
     </extensions>
 
     <applicationListeners>
