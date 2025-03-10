@@ -125,13 +125,21 @@ kover {
     }
 }
 
+tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.INHERIT
+}
+
 tasks {
+
     wrapper {
         gradleVersion = providers.gradleProperty("gradleVersion").get()
     }
 
     runIde {
+        sandboxDirectory.set(project.buildDir.resolve("fresh-sandbox"))
+
         val sandBoxPath = project.buildDir.resolve("idea-sandbox/" + providers.gradleProperty("platformType").get() + "-" + providers.gradleProperty("platformVersion").get() + "/plugins/${project.name}")
+
         val targetPath = sandBoxPath.resolve("SATDBailiff/target")
         val libPath = sandBoxPath.resolve("SATDBailiff")
         val sqlPath = sandBoxPath.resolve("sql")
