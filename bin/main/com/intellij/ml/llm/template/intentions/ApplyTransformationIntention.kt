@@ -113,6 +113,7 @@ abstract class ApplyTransformationIntention(
         val settings = LLMSettingsManager.getInstance()
         val satdType = extractBracketContent('$'.toString(), text)
 
+
         val instruction = getInstruction(project, editor, satdType) ?: return
         logger.info("Invoke transformation action with '$instruction' instruction for '$text'")
         val task =
@@ -123,10 +124,10 @@ abstract class ApplyTransformationIntention(
                     {
                          prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'."
                     }
-//                    else
-//                    {
-//                         return null
-//                    }
+                    else
+                    {
+                         prompt = "This code has unidentified technical debt. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'.\""
+                    }
                     var response:LLMBaseResponse? =    null
 
                     when (settings.provider) {

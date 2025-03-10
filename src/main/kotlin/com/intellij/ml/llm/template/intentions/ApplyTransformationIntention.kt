@@ -123,10 +123,10 @@ abstract class ApplyTransformationIntention(
                     {
                          prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'."
                     }
-//                    else
-//                    {
-//                         return null
-//                    }
+                    else
+                    {
+                        prompt = "No SATDType provided. Output raw code fixing the following issue: {$text}. Do NOT include any formatting delimiters such as '`'."
+                    }
                     var response:LLMBaseResponse? =    null
 
                     when (settings.provider) {
