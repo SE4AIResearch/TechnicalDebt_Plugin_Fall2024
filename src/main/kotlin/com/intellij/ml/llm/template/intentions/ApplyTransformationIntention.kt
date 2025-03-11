@@ -127,7 +127,7 @@ abstract class ApplyTransformationIntention(
                     {
                         prompt = "No SATDType provided. Output raw code fixing the following issue: {$text}. Do NOT include any formatting delimiters such as '`'."
                     }
-                    var response:LLMBaseResponse? =    null
+                    var response:LLMBaseResponse? = null
 
                     when (settings.provider) {
                         LLMSettingsManager.LLMProvider.GEMINI -> {
