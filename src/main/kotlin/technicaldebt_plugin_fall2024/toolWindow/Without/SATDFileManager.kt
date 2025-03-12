@@ -9,7 +9,6 @@ import java.io.*
 import java.util.stream.Collectors
 
 class SATDFileManager {
-
     fun navigateToCode(project: Project, lineNumber: Int, path: String) {
         val homePath = project.basePath
         val fullPath = "$homePath/$path"

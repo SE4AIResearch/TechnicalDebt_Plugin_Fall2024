@@ -167,7 +167,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 }
             }
         }
-
         private fun getTextWidth(table: JTable, text: String, font: Font): Int {
             val metrics = table.getFontMetrics(font)
             return metrics.stringWidth(text)
