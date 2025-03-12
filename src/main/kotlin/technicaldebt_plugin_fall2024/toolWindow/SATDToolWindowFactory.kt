@@ -31,7 +31,6 @@ import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableCellRenderer
 
 class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
-
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val toolWindowPanel = JBPanel<JBPanel<*>>()
         toolWindowPanel.layout = BorderLayout()
@@ -175,7 +174,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val gitUrl = getGitHubUrl(project)
         try {
             BufferedWriter(FileWriter(path)).use { writer ->
-                writer.write(gitUrl)
+                if (gitUrl != null) {
+                    writer.write(gitUrl)
+                }
             }
         } catch (e: IOException) {
             e.printStackTrace()
