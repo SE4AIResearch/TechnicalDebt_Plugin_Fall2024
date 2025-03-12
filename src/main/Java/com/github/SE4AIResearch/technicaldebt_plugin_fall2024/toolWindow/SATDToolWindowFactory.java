@@ -1,4 +1,5 @@
 package com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow;
+package technicaldebt_plugin_fall2024.toolWindow.`ToolWindow `
 
 import com.intellij.openapi.editor.CaretModel;
 import com.intellij.openapi.editor.Editor;
