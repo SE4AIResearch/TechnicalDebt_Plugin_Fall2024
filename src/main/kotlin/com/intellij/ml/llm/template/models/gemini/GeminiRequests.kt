@@ -25,7 +25,10 @@ open class GeminiBaseRequest<Body>( body: Body) : LLMBaseRequest<Body>(body) {
                     val responseCode = (request.connection as HttpURLConnection).responseCode
                     if (responseCode == HttpURLConnection.HTTP_OK) {
                         val response = request.readString()
+                        print(Gson().fromJson(response, GeminiResponse::class.java))
                         Gson().fromJson(response, GeminiResponse::class.java)
+
+
                     } else {
                         null
                     }

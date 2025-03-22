@@ -20,7 +20,6 @@ open class GeminiBaseRequest<Body>( body: Body) : LLMBaseRequest<Body>(body) {
                 .tuner {
                     it.setRequestProperty("Authorization", "Bearer $apiKey")
                 }.connect { request ->
-                    print("Body here: ${GsonBuilder().create().toJson(body)}")
                     request.write(GsonBuilder().create().toJson(body))
                     val responseCode = (request.connection as HttpURLConnection).responseCode
                     if (responseCode == HttpURLConnection.HTTP_OK) {

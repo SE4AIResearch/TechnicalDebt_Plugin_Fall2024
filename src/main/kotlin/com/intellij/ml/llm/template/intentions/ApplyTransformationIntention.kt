@@ -28,7 +28,7 @@ import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
 import java.util.*
-import com.intellij.ml.llm.template.ui.LLMOutputToolWindow
+//import com.intellij.ml.llm.template.ui.LLMOutputToolWindow
 
 @Suppress("UnstableApiUsage")
 abstract class ApplyTransformationIntention(
@@ -64,8 +64,6 @@ abstract class ApplyTransformationIntention(
 
         return sb.toString()
     }
-
-
 
     override fun getFamilyName(): String = LLMBundle.message("intentions.apply.transformation.family.name")
 
@@ -117,8 +115,9 @@ abstract class ApplyTransformationIntention(
         logger.info("Invoke transformation action with '$instruction' instruction for '$text'")
         val task =
             object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
-                override fun run(indicator: ProgressIndicator) {
+            override fun run(indicator: ProgressIndicator) {
                     var prompt = ""
+
                     if(satdType.isNotEmpty())
                     {
                          prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'."
@@ -143,7 +142,7 @@ abstract class ApplyTransformationIntention(
                                     llmRequestProvider = provider
                             )
 
-//                            print("Here: $response")
+                            print("Here: $response")
                         }
                         LLMSettingsManager.LLMProvider.OLLAMA -> {
                             val provider = OllamaRequestProvider
@@ -170,28 +169,37 @@ abstract class ApplyTransformationIntention(
                                     model = provider.chatModel,
                                     llmRequestProvider = provider
                             )
-
-
-
                         }
                     }
-
-
                         if (response != null) {
                             var suggestions = response.getSuggestions()
                             if (suggestions.isEmpty()) {
                                 logger.warn("No suggestions received for transformation.")
                             }
-                            response.getSuggestions().firstOrNull()?.let {
-                                logger.info("Suggested change: $it")
-                                var updatedCode = it.text
+                            else {
 
-                                if (updatedCode.contains("```")) {
-                                    updatedCode = updatedCode
-                                        .replace("```java", "")
-                                        .replace("```", "")
+                                var suggestions = response.getSuggestions()
+
+                                // Check if there's at least one suggestion before proceeding
+                                if (suggestions.isNotEmpty()) {
+                                    val updatedSuggestions = suggestions.map {
+                                        var llmCode = it.text
+
+                                        if (llmCode.contains("```")) {
+                                            llmCode = llmCode
+                                                .replace("```java", "")
+                                                .replace("```", "")
+                                        }
+
+                                        LLMResponseChoice(llmCode, it.finishReason) // Return a new modified object
+                                    }
+                                    // Print the updated suggestions
+                                    updatedSuggestions.forEach { println(it.text) }
+                                    suggestions = updatedSuggestions
                                 }
-                                outputToSideWindow(updatedCode, editor, project, textRange)
+
+                                // Output suggestions to frontend as list of LLMResponseChoice() objects
+                                outputToSideWindow(suggestions, editor, project, textRange)
                             }
                         }
                     }
@@ -205,10 +213,10 @@ abstract class ApplyTransformationIntention(
 
 
 
-    private fun outputToSideWindow(content: String, editor: Editor, project: Project, textRange: TextRange) {
+    private fun outputToSideWindow(content: List<LLMResponseChoice>, editor: Editor, project: Project, textRange: TextRange) {
 
         invokeLater {
-            LLMOutputToolWindow.updateOutput(content, editor, project, textRange)
+//            LLMOutputToolWindow.updateOutput(content, editor, project, textRange)
         }
     }
 

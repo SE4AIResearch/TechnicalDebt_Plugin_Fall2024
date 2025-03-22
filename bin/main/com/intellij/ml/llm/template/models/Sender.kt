@@ -80,7 +80,8 @@ fun sendGeminiRequest(
             llmRequestProvider.createGeminiRequest(
                     GeminiRequestBody(
                             model = llmRequestProvider.chatModel,
-                            messages = messages
+                            messages = messages,
+                            n = 2
                     )
             )
     return sendRequest(project, request)
