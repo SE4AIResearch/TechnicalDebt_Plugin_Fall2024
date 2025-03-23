@@ -36,14 +36,14 @@ import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.ui.EditorTextField
 
-
-
-
 class LLMOutputToolWindow : ToolWindowFactory {
     companion object {
-        private val settings = service<LLMSettingsManager>()
-        private var textArea: JBTextArea? = null
-        private var applyButton: JButton? = null
+        private val llmSettingsManager: LLMSettingsManager by lazy {
+            // Get the LLMSettingsManager service when needed
+            service<LLMSettingsManager>()
+        }
+        private lateinit var textArea: JBTextArea
+        private lateinit var applyButton: JButton
         private var latestEditor: Editor? = null
         private var latestProject: Project? = null
         private var latestTextRange: TextRange? = null
@@ -113,7 +113,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
 
     fun updateLLMType() {
         SwingUtilities.invokeLater {
-            llmLabel?.text = "Active LLM: ${settings.provider}"
+            llmLabel?.text = "Active LLM: ${llmSettingsManager.provider}"
             llmLabel?.revalidate()
             llmLabel?.repaint()
         }
@@ -154,7 +154,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                 preferredSize = Dimension(400, 300)
             }
 
-            llmLabel = JLabel("Active LLM: ${settings.provider}").apply{
+            llmLabel = JLabel("Active LLM: ${llmSettingsManager.provider}").apply{
                 font = font.deriveFont(14f)
             }
             add(llmLabel)
@@ -307,6 +307,4 @@ class LLMOutputToolWindow : ToolWindowFactory {
         val line = 10  // Example mutant line number
         highlightLine(editor, line)
     }
-
-
 }
