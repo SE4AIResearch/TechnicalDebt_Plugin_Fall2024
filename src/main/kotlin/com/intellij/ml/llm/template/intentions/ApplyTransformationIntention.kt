@@ -142,7 +142,7 @@ abstract class ApplyTransformationIntention(
                                     llmRequestProvider = provider
                             )
 
-                            print("Here: $response")
+//                            print("Here: $response")
                         }
                         LLMSettingsManager.LLMProvider.OLLAMA -> {
                             val provider = OllamaRequestProvider
@@ -167,7 +167,8 @@ abstract class ApplyTransformationIntention(
                                     project,
                                     messages,
                                     model = provider.chatModel,
-                                    llmRequestProvider = provider
+                                    llmRequestProvider = provider,
+                                    n = 3
                             )
                         }
                     }
@@ -198,8 +199,12 @@ abstract class ApplyTransformationIntention(
                                     suggestions = updatedSuggestions
                                 }
 
-                                // Output suggestions to frontend as list of LLMResponseChoice() objects
-                                outputToSideWindow(suggestions, editor, project, textRange)
+                                for ((index, value) in suggestions.withIndex())
+                                {
+                                    println("Suggestion ${index}:  ${value.text}")
+                                }
+//                                // Output suggestions to frontend as list of LLMResponseChoice() objects
+//                                outputToSideWindow(suggestions, editor, project, textRange)
                             }
                         }
                     }

@@ -13,9 +13,9 @@ open class GeminiBaseRequest<Body>( body: Body) : LLMBaseRequest<Body>(body) {
     override fun sendSync(): GeminiResponse? {
         val apiKey = CredentialsHolder.getInstance().getGeminiKey()?.ifEmpty { null }
                 ?: throw AuthorizationException("Gemini API Key is not provided")
-        println(apiKey)
+//        println(apiKey)
         val url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-        println(url)
+//        println(url)
         return HttpRequests.post(url, "application/json")
                 .tuner {
                     it.setRequestProperty("Authorization", "Bearer $apiKey")
