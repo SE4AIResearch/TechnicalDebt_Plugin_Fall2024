@@ -2,6 +2,7 @@ package technicaldebt_plugin_fall2024.toolWindow.Without
 
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -60,13 +61,15 @@ class SATDFileManager {
     }
 
     fun writeTestRepo(path: String, project: Project) {
-        val gitUrl = getGitHubUrl(project)
-        try {
-            BufferedWriter(FileWriter(path)).use { writer ->
-                writer.write(gitUrl)
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val gitUrl = getGitHubUrl(project)
+            try {
+                BufferedWriter(FileWriter(path)).use { writer ->
+                    writer.write(gitUrl)
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
             }
-        } catch (e: IOException) {
-            e.printStackTrace()
         }
     }
 }
