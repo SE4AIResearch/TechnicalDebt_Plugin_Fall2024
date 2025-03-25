@@ -1,11 +1,26 @@
 <idea-plugin>
     <id>com.github.SE4AIResearch.technicaldebt_plugin_fall2024</id>
     <name>Technical Debt Tool</name>
+    <version>1.0.0</version>
     <vendor>SE4AIResearch</vendor>
 
+    <description>
+        This plugin helps in identifying and managing technical debt in your project.
+    </description>
+
+    <change-notes>
+        Initial release.
+    </change-notes>
+
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.java</depends>
+    <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
+        <toolWindow factoryClass="technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory" id="SATDToolWindow" anchor="bottom"/>
+        <annotator language="kotlin" implementationClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
+        <dynamicPluginListener implementationClass="technicaldebt_plugin_fall2024.toolWindow.Without.PluginReloader"/>
         <applicationConfigurable
                 groupId="tools"
                 instance="com.intellij.ml.llm.template.settings.LLMConfigurable"
@@ -19,7 +34,6 @@
                 bundle="messages.LLMBundle"
                 key="settings.configurable.openai.advanced.display.name"/>
 
-        <!--suppress PluginXmlExtensionRegistration -->
         <intentionAction>
             <className>com.intellij.ml.llm.template.intentions.ApplyCustomEditIntention</className>
             <bundleName>messages.LLMBundle</bundleName>
@@ -28,34 +42,10 @@
 
         <toolWindow id="LLM Output" anchor="right" factoryClass="com.intellij.ml.llm.template.ui.LLMOutputToolWindow"/>
 
-
         <registryKey defaultValue="false"
                      description="If enabled, emulates requests instead of using OpenAI API. Used for debug purposes."
                      key="llm.for.code.enable.mock.requests"/>
 
         <notificationGroup id="AI notification group" displayType="STICKY_BALLOON" bundle="messages.LLMBundle" key="notification.group.name"/>
-
     </extensions>
-<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
-
-
-    <depends>com.intellij.modules.platform</depends>
-
-    <depends>com.intellij.modules.lang</depends>
-    <depends>com.intellij.java</depends>
-
-    <resource-bundle>messages.MyBundle</resource-bundle>
-
-    <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.MyToolWindowFactory" id="MyToolWindow" anchor="bottom"/>
-    </extensions>
-
-    <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory" id="SATDToolWindow" anchor="bottom"/>
-        <annotator language="kotlin" implementationClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
-    </extensions>
-
-    <applicationListeners>
-        <listener class="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
-    </applicationListeners>
 </idea-plugin>
