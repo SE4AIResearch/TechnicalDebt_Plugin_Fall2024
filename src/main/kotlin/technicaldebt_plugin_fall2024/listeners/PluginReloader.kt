@@ -1,4 +1,5 @@
-package technicaldebt_plugin_fall2024.toolWindow.Without
+package technicaldebt_plugin_fall2024.listeners
+
 import com.intellij.ide.plugins.DynamicPluginListener
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.openapi.application.ApplicationManager
