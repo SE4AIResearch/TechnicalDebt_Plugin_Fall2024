@@ -47,28 +47,24 @@ class SATDFileManager {
     }
 
     private fun extractRemoteUrl(configContent: String): String? {
-        val lines = configContent.split("\n").toTypedArray()
-        for (i in lines.indices) {
-            if (lines[i].trim { it <= ' ' } == "[remote \"origin\"]") {
-                for (j in i + 1 until lines.size) {
-                    if (lines[j].trim { it <= ' ' }.startsWith("url =")) {
-                        return lines[j].trim { it <= ' ' }.substring(6).trim { it <= ' ' }
-                    }
-                }
-            }
-        }
-        return null
+        val regex = """\[remote\s+"origin"]\s*(.*?)\s*url\s*=\s*(\S+)""".toRegex(RegexOption.DOT_MATCHES_ALL)
+        return regex.find(configContent)?.groupValues?.get(2)?.removeSuffix(".git")
     }
 
     fun writeTestRepo(path: String, project: Project) {
         ApplicationManager.getApplication().executeOnPooledThread {
             val gitUrl = getGitHubUrl(project)
-            try {
-                BufferedWriter(FileWriter(path)).use { writer ->
-                    writer.write(gitUrl)
+            synchronized(this)
+            {
+                try {
+                    BufferedWriter(FileWriter(path)).use { writer ->
+                        if (gitUrl != null) {
+                            writer.write(gitUrl)
+                        }
+                    }
+                } catch (e: IOException) {
+                    e.printStackTrace()
                 }
-            } catch (e: IOException) {
-                e.printStackTrace()
             }
         }
     }

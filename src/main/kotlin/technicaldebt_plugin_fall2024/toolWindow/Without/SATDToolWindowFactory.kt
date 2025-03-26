@@ -1,5 +1,6 @@
 package technicaldebt_plugin_fall2024.toolWindow
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbAware
@@ -70,7 +71,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         toolWindowPanel.add(tabbedPane, BorderLayout.CENTER)
 
         val testRepo = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/test_repo.csv"
-        satdFileManager.writeTestRepo(testRepo, project)
+        ApplicationManager.getApplication().executeOnPooledThread {
+            satdFileManager.writeTestRepo(testRepo, project)
+        }
 
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
