@@ -93,7 +93,7 @@ fun sendOllamaRequest(
 
 ): LLMBaseResponse? {
     val request =
-        llmRequestProvider.createOllamaRequest(OllamaBody("llama2", prompt = prompt))
+        llmRequestProvider.createOllamaRequest(OllamaBody(model = llmRequestProvider.chatModel, prompt = prompt))
     return sendRequest(project, request)
 }
 
