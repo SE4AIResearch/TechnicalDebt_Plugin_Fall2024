@@ -134,6 +134,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         // Set button action
         button.addActionListener { e: ActionEvent? ->
             //TODO: Fix progress manager so that it actually waits for the task to finish
+
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
                 {
                     initializeAndConnectDatabase(
@@ -375,6 +376,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             }
 
             val indicator = ProgressManager.getInstance().progressIndicator
+            indicator.isIndeterminate = true
+
 
             // Load the MySQL JDBC Driver
             try {
@@ -403,7 +406,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                         // Update progress
                         if (indicator != null) {
                             SwingUtilities.invokeLater { indicator.text = "Database initialization complete." }
-                            SwingUtilities.invokeLater { indicator.fraction = 0.33 }
                         }
 
                         try {
@@ -435,7 +437,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                         // Update progress
                         if (indicator != null) {
                             SwingUtilities.invokeLater { indicator.text = "Database up to Date." }
-                            SwingUtilities.invokeLater { indicator.fraction = 0.66 }
                         }
 
                         var fetchQuery = "SELECT * FROM SATDInFile"
@@ -497,7 +498,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                         // Update progress
                         if (indicator != null) {
                             SwingUtilities.invokeLater { indicator.text = "Data fetching complete." }
-                            SwingUtilities.invokeLater { indicator.fraction = 1.0 }
                         }
 
 
