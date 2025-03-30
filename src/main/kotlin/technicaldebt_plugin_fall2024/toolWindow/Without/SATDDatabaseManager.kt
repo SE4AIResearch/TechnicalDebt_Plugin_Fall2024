@@ -139,6 +139,7 @@ class SATDDatabaseManager {
         }
 
         val indicator = ProgressManager.getInstance().progressIndicator
+        indicator.isIndeterminate = true;
 
         try {
             Class.forName("org.sqlite.JDBC")
@@ -165,7 +166,6 @@ class SATDDatabaseManager {
 
                     indicator?.let {
                         it.text = "Database initialization complete."
-                        it.fraction = 0.33
                     }
 
                     try {
@@ -195,7 +195,6 @@ class SATDDatabaseManager {
 
                     indicator?.let {
                         it.text = "Database up to Date."
-                        it.fraction = 0.66
                     }
 
                     var fetchQuery = "SELECT * FROM SATDInFile"
@@ -225,7 +224,6 @@ class SATDDatabaseManager {
 
                     indicator?.let {
                         it.text = "Data fetching complete."
-                        it.fraction = 1.0
                     }
                 }
             }
