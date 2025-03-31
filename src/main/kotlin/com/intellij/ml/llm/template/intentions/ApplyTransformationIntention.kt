@@ -127,7 +127,9 @@ abstract class ApplyTransformationIntention(
                     {
                         prompt = "No SATDType provided. Output raw code fixing the following issue: {$text}. Do NOT include any formatting delimiters such as '`'."
                     }
-                    var response:LLMBaseResponse? = null
+                    var response1:LLMBaseResponse? = null
+                    var response2:LLMBaseResponse? = null
+
 
                     when (settings.provider) {
                         LLMSettingsManager.LLMProvider.GEMINI -> {
@@ -136,7 +138,13 @@ abstract class ApplyTransformationIntention(
                                     GeminiChatMessage(role = "user", content = prompt ),
                             )
 
-                            response = sendGeminiRequest(
+                            response1 = sendGeminiRequest(
+                                    project,
+                                    messages,
+                                    model = provider.chatModel,
+                                    llmRequestProvider = provider
+                            )
+                            response2 = sendGeminiRequest(
                                     project,
                                     messages,
                                     model = provider.chatModel,
@@ -150,7 +158,12 @@ abstract class ApplyTransformationIntention(
 
                             val ollama = OllamaBody(provider.chatModel, prompt)
 
-                            response = sendOllamaRequest(
+                            response1 = sendOllamaRequest(
+                                    project,
+                                    ollama.prompt,
+                                    llmRequestProvider = provider
+                            )
+                            response2 = sendOllamaRequest(
                                     project,
                                     ollama.prompt,
                                     llmRequestProvider = provider
@@ -164,7 +177,13 @@ abstract class ApplyTransformationIntention(
                                     OpenAiChatMessage(role = "user", content = prompt ),
                             )
 
-                            response = sendChatRequest(
+                            response1 = sendChatRequest(
+                                    project,
+                                    messages,
+                                    model = provider.chatModel,
+                                    llmRequestProvider = provider,
+                            )
+                            response2 = sendChatRequest(
                                     project,
                                     messages,
                                     model = provider.chatModel,
@@ -176,25 +195,47 @@ abstract class ApplyTransformationIntention(
                         }
                     }
 
+                        var updatedCode1 = "Response was not provided";
+                        var updatedCode2 = "Response was not provided";
 
-                        if (response != null) {
-                            var suggestions = response.getSuggestions()
+                        if (response1 != null) {
+                            var suggestions = response1.getSuggestions()
                             if (suggestions.isEmpty()) {
                                 logger.warn("No suggestions received for transformation.")
                             }
-                            response.getSuggestions().firstOrNull()?.let {
+                            response1.getSuggestions().firstOrNull()?.let {
                                 logger.info("Suggested change: $it")
-                                var updatedCode = it.text
+                                updatedCode1 = it.text
 
-                                if (updatedCode.contains("```")) {
-                                    updatedCode = updatedCode
+                                if (updatedCode1.contains("```")) {
+                                    updatedCode1 = updatedCode1
                                         .replace("```java", "")
                                         .replace("```", "")
                                 }
-                                outputToSideWindow(updatedCode, editor, project, textRange)
                             }
                         }
-                    }
+
+                        if (response2 != null) {
+                            var suggestions = response2.getSuggestions()
+                            if (suggestions.isEmpty()) {
+                                logger.warn("No suggestions received for transformation.")
+                            }
+                            response2.getSuggestions().firstOrNull()?.let {
+                                logger.info("Suggested change: $it")
+                                updatedCode2 = it.text
+
+                                if (updatedCode2.contains("```")) {
+                                    updatedCode2 = updatedCode2
+                                            .replace("```java", "")
+                                            .replace("```", "")
+                                }
+                            }
+                        }
+                        outputToSideWindow(updatedCode1, updatedCode2, editor, project, textRange)
+
+
+
+                }
 
                 }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -205,10 +246,10 @@ abstract class ApplyTransformationIntention(
 
 
 
-    private fun outputToSideWindow(content: String, editor: Editor, project: Project, textRange: TextRange) {
+    private fun outputToSideWindow(content1: String, content2:String, editor: Editor, project: Project, textRange: TextRange) {
 
         invokeLater {
-            LLMOutputToolWindow.updateOutput(content, editor, project, textRange)
+            LLMOutputToolWindow.updateOutput(content1, content2, editor, project, textRange)
         }
     }
 

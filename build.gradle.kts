@@ -44,6 +44,9 @@ repositories {
 dependencies {
     testImplementation(libs.junit)
 
+    testImplementation("com.intellij.remoterobot:remote-robot:0.11.13")
+    testImplementation("com.intellij.remoterobot:remote-fixtures:0.11.13")
+
     intellijPlatform {
         create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
         bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
