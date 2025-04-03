@@ -63,6 +63,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         tableModel2.addColumn("First File")
         tableModel2.addColumn("Second File")
         tableModel2.addColumn("Resolution")
+        tableModel2.addColumn("Refactoring")
         val table2 = JTable(tableModel2)
         table2.isEnabled = false
         val scrollPane2 = JBScrollPane(table2, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED)
