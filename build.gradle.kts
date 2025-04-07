@@ -134,6 +134,20 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.INHERIT
 }
 
+tasks.buildPlugin {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from("SATDBailiff") {
+        into("SATDBailiff")
+    }
+    from("sql") {
+        into("sql")
+    }
+    from("SATDBailiff/target") {
+        into("SATDBailiff/target")
+    }
+}
+
 tasks {
 
     wrapper {
