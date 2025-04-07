@@ -5,6 +5,7 @@ import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBLabel
@@ -13,6 +14,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.content.ContentFactory
 import technicaldebt_plugin_fall2024.toolWindow.Without.SATDDatabaseManager
 import technicaldebt_plugin_fall2024.toolWindow.Without.SATDFileManager
+
 
 import java.awt.BorderLayout
 import java.awt.Component
@@ -80,7 +82,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 if (e.clickCount == 2) {
                     val row = table.rowAtPoint(e.point)
                     val path = table.getValueAt(row, 2) as String
-                    val startLineStr = table.getValueAt(row, 3) as String
+                    val startLineStr = table.getValueAt(row, 3) as Int
                     val line = startLineStr.toInt()
                     satdFileManager.navigateToCode(project, line, path)
                 }
@@ -98,6 +100,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             if (db.createNewFile()) {
                 satdDatabaseManager.initialize(label, project.name, button)
             } else {
+                val message = "Loading existing SATD data for this  project. May not include most recent commits. Click \"Fetch SATD Data\" to update data"
+                Messages.showWarningDialog(message, "")
+
                 satdDatabaseManager.loadDatabase(tableModel, label, table, tableModel2, table2, project.name, button)
             }
         } catch (e: IOException) {
@@ -106,12 +111,12 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
         button.addActionListener {
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
-                {
-                    satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, tableModel2, table2, project.name, button)
-                },
-                "Fetching SATD Data",
-                false,
-                project
+                    {
+                        satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, tableModel2, table2, project.name, button)
+                    },
+                    "Fetching SATD Data",
+                    false,
+                    project
             )
         }
 
@@ -128,12 +133,12 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         }
 
         override fun getTableCellRendererComponent(
-            table: JTable,
-            value: Any?,
-            isSelected: Boolean,
-            hasFocus: Boolean,
-            row: Int,
-            column: Int
+                table: JTable,
+                value: Any?,
+                isSelected: Boolean,
+                hasFocus: Boolean,
+                row: Int,
+                column: Int
         ): Component {
             text = value?.toString() ?: ""
             setSize(table.columnModel.getColumn(column).width, preferredSize.height)
