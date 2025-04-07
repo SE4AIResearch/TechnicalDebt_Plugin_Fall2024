@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.kover) // Gradle Kover Plugin
 }
 
+
 group = providers.gradleProperty("pluginGroup").get()
 version = providers.gradleProperty("pluginVersion").get()
 
@@ -34,6 +35,7 @@ repositories {
 
     intellijPlatform {
         defaultRepositories()
+
     }
 
     flatDir {
@@ -50,7 +52,7 @@ dependencies {
     intellijPlatform {
         create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
         bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
-        plugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
+        plugins(providers.gradleProperty("platformPlugins").map { it.split(',')})
         instrumentationTools()
         pluginVerifier()
         testFramework(TestFrameworkType.Platform)
