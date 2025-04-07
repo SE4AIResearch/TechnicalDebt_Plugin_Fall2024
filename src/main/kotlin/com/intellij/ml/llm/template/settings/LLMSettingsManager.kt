@@ -18,6 +18,7 @@ class LLMSettingsManager : PersistentStateComponent<LLMSettings> {
 //    var openAiKey: String = ""
     var ollamaServer: String = ""
 //    var GeminiKey: String = ""
+    var ollamaModel: String = "llama2"
 
 
     companion object {
