@@ -1,10 +1,11 @@
 package technicaldebt_plugin_fall2024.toolWindow.Without
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.LocalFileSystem
 import java.io.*
 import java.util.stream.Collectors
@@ -16,6 +17,9 @@ class SATDFileManager {
         val file = LocalFileSystem.getInstance().findFileByPath(fullPath)
         if (file == null) {
             println("File not found: $fullPath")
+            val message = "File not found at given path"
+            val title = ""
+            Messages.showErrorDialog(message, title)
             return
         }
         FileEditorManager.getInstance(project).openFile(file, true)
@@ -47,24 +51,32 @@ class SATDFileManager {
     }
 
     private fun extractRemoteUrl(configContent: String): String? {
-        val regex = """\[remote\s+"origin"]\s*(.*?)\s*url\s*=\s*(\S+)""".toRegex(RegexOption.DOT_MATCHES_ALL)
-        return regex.find(configContent)?.groupValues?.get(2)?.removeSuffix(".git")
+        val lines = configContent.split("\n").toTypedArray()
+        for (i in lines.indices) {
+            if (lines[i].trim { it <= ' ' } == "[remote \"origin\"]") {
+                for (j in i + 1 until lines.size) {
+                    if (lines[j].trim { it <= ' ' }.startsWith("url =")) {
+                        var url = lines[j].trim { it <= ' ' }.substring(6).trim { it <= ' ' }
+                        if(url.endsWith(".git")){
+                            url = url.removeSuffix(".git");
+                        }
+                        return url
+                    }
+                }
+            }
+        }
+        return null
     }
 
     fun writeTestRepo(path: String, project: Project) {
         ApplicationManager.getApplication().executeOnPooledThread {
             val gitUrl = getGitHubUrl(project)
-            synchronized(this)
-            {
-                try {
-                    BufferedWriter(FileWriter(path)).use { writer ->
-                        if (gitUrl != null) {
-                            writer.write(gitUrl)
-                        }
-                    }
-                } catch (e: IOException) {
-                    e.printStackTrace()
+            try {
+                BufferedWriter(FileWriter(path)).use { writer ->
+                    writer.write(gitUrl)
                 }
+            } catch (e: IOException) {
+                e.printStackTrace()
             }
         }
     }
