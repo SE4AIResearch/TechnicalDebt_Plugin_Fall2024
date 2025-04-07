@@ -433,6 +433,20 @@ class LLMOutputToolWindow : ToolWindowFactory {
                         minimumSize = Dimension(24, 24)
                         maximumSize = Dimension(24, 24)
                         addActionListener {
+
+                            editor1Selected = true
+                            editor2Selected = false
+                            applyChanges()
+
+                            editorField1?.text = "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
+                            editorField2?.text =  "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
+                            applyButton?.isEnabled = false
+                            llmRequested = false
+                            toolWindow.hide(null)
+
+
+
+                            
                             if (editor != null) {
                                 runFileInIDEA(project, editor)
                             }
@@ -474,6 +488,19 @@ class LLMOutputToolWindow : ToolWindowFactory {
                         minimumSize = Dimension(24, 24)
                         maximumSize = Dimension(24, 24)
                         addActionListener {
+
+                            editor2Selected = true
+                            editor1Selected = false
+                            applyChanges()
+
+                            editorField1?.text = "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
+                            editorField2?.text =  "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
+                            applyButton?.isEnabled = false
+                            llmRequested = false
+                            toolWindow.hide(null)
+
+
+                            
                             if (editor != null) {
                                 runFileInIDEA(project, editor)
                             }
