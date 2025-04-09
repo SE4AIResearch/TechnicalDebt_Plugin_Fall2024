@@ -25,6 +25,7 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
     private lateinit var openAiKeyRow: Row
     private lateinit var openAiOrgRow: Row
     private lateinit var ollamaServerRow: Row
+    private lateinit var ollamaModelRow: Row
 
     private val outputTextArea = JTextArea().apply {
         isEditable = false  // Prevent user input
@@ -58,6 +59,18 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
             }
 
             ollamaServerRow.visible(false)
+
+            ollamaModelRow = row("Ollama Model:") {
+                comboBox(
+                        DefaultComboBoxModel(arrayOf("llama2", "deepseek"))
+                ).bindItem(
+                        { settings.ollamaModel },
+                        { settings.ollamaModel = it ?: "llama2" }
+                ).apply {
+                    component.toolTipText = "Choose a model like llama2 or deepseek"
+                }
+            }
+            ollamaModelRow.visible(false)
 
 
             geminiAiKeyRow = row(LLMBundle.message("settings.configurable.gemini.key.label")) {
@@ -97,6 +110,7 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
         openAiKeyRow.visible(isOpenAi)
         openAiOrgRow.visible(isOpenAi)
         ollamaServerRow.visible(isOllama)
+        ollamaModelRow.visible(isOllama)
 
         apply()
 

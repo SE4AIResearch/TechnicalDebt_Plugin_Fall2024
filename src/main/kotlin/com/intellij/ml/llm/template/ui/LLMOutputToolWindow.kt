@@ -2,11 +2,14 @@ package com.intellij.ml.llm.template.ui
 
 import com.intellij.credentialStore.RememberCheckBoxState.isSelected
 import com.intellij.execution.ExecutorRegistry
+import com.intellij.psi.PsiManager
 import com.intellij.execution.ProgramRunnerUtil
 import com.intellij.execution.RunManager
 import com.intellij.execution.RunnerAndConfigurationSettings
+import com.intellij.execution.configurations.ConfigurationFactory
 import com.intellij.execution.configurations.ConfigurationTypeUtil
 import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.execution.impl.RunManagerImpl
 import com.intellij.execution.runners.ExecutionUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -46,6 +49,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
 import com.intellij.ui.EditorTextField
 import com.jetbrains.rd.generator.nova.PredefinedType
 import java.awt.*
@@ -429,6 +433,20 @@ class LLMOutputToolWindow : ToolWindowFactory {
                         minimumSize = Dimension(24, 24)
                         maximumSize = Dimension(24, 24)
                         addActionListener {
+
+                            editor1Selected = true
+                            editor2Selected = false
+                            applyChanges()
+
+                            editorField1?.text = "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
+                            editorField2?.text =  "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
+                            applyButton?.isEnabled = false
+                            llmRequested = false
+                            toolWindow.hide(null)
+
+
+
+                            
                             if (editor != null) {
                                 runFileInIDEA(project, editor)
                             }
@@ -470,6 +488,19 @@ class LLMOutputToolWindow : ToolWindowFactory {
                         minimumSize = Dimension(24, 24)
                         maximumSize = Dimension(24, 24)
                         addActionListener {
+
+                            editor2Selected = true
+                            editor1Selected = false
+                            applyChanges()
+
+                            editorField1?.text = "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
+                            editorField2?.text =  "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
+                            applyButton?.isEnabled = false
+                            llmRequested = false
+                            toolWindow.hide(null)
+
+
+                            
                             if (editor != null) {
                                 runFileInIDEA(project, editor)
                             }

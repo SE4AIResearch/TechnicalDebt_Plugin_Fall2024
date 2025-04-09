@@ -2,6 +2,7 @@ package com.intellij.ml.llm.template.intentions
 
 //import com.intellij.ml.llm.template.models.CodexRequestProvider
 //import com.intellij.ml.llm.template.models.sendEditRequest
+import com.intellij.openapi.ui.Messages
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.ml.llm.template.LLMBundle
 import com.intellij.ml.llm.template.models.*
@@ -113,6 +114,16 @@ abstract class ApplyTransformationIntention(
         val settings = LLMSettingsManager.getInstance()
         val satdType = extractBracketContent('$'.toString(), text)
 
+
+        if (satdType.isEmpty()) {
+            Messages.showWarningDialog(
+                    project,
+                    "SATD type not detected. Please ensure your code contains valid SATD.",
+                    "SATD Detection Warning"
+            )
+            return
+        }
+
         val instruction = getInstruction(project, editor, satdType) ?: return
         logger.info("Invoke transformation action with '$instruction' instruction for '$text'")
         val task =
@@ -121,7 +132,7 @@ abstract class ApplyTransformationIntention(
                     var prompt = ""
                     if(satdType.isNotEmpty())
                     {
-                         prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'."
+                        prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'."
                     }
                     else
                     {
@@ -144,9 +155,15 @@ abstract class ApplyTransformationIntention(
                                     model = provider.chatModel,
                                     llmRequestProvider = provider
                             )
+                            val firstSuggestion = response1?.getSuggestions()?.firstOrNull()?.text ?: ""
+                            val messages2 = listOf(
+                                    GeminiChatMessage(role = "user", content = prompt),
+                                    GeminiChatMessage(role = "assistant", content = firstSuggestion),
+                                    GeminiChatMessage(role = "user", content = "Give me a different version of the fix. Use a different approach or style."),
+                            )
                             response2 = sendGeminiRequest(
                                     project,
-                                    messages,
+                                    messages2,
                                     model = provider.chatModel,
                                     llmRequestProvider = provider
                             )
@@ -161,14 +178,19 @@ abstract class ApplyTransformationIntention(
                             response1 = sendOllamaRequest(
                                     project,
                                     ollama.prompt,
-                                    llmRequestProvider = provider
+                                    llmRequestProvider = provider,
+
                             )
+                            val firstSuggestion = response1?.getSuggestions()?.firstOrNull()?.text ?: ""
+                            val altPrompt = "$prompt\n\nPreviously suggested fix:\n$firstSuggestion\n\nNow provide an alternative fix using a different approach."
                             response2 = sendOllamaRequest(
                                     project,
-                                    ollama.prompt,
+                                    altPrompt,
                                     llmRequestProvider = provider
                             )
                         }
+
+
                         LLMSettingsManager.LLMProvider.OPENAI -> {
                             val provider = GPTRequestProvider
 
@@ -182,12 +204,22 @@ abstract class ApplyTransformationIntention(
                                     messages,
                                     model = provider.chatModel,
                                     llmRequestProvider = provider,
+                                    temperature = 1.1,
+                                    topP = 0.85
+                            )
+                            val response1Text = response1?.getSuggestions()?.firstOrNull()?.text ?: ""
+                            val messages2 = listOf(
+                                    OpenAiChatMessage(role = "user", content = prompt),
+                                    OpenAiChatMessage(role = "assistant", content = response1Text),
+                                    OpenAiChatMessage(role = "user", content = "Give me a different version of the fix. Try a new approach or improvement.")
                             )
                             response2 = sendChatRequest(
                                     project,
-                                    messages,
+                                    messages2,
                                     model = provider.chatModel,
-                                    llmRequestProvider = provider
+                                    llmRequestProvider = provider,
+                                    temperature = 1.1,
+                                    topP = 0.85
                             )
 
 
@@ -197,6 +229,7 @@ abstract class ApplyTransformationIntention(
 
                         var updatedCode1 = "Response was not provided";
                         var updatedCode2 = "Response was not provided";
+
 
                         if (response1 != null) {
                             var suggestions = response1.getSuggestions()
@@ -231,6 +264,8 @@ abstract class ApplyTransformationIntention(
                                 }
                             }
                         }
+
+
                         outputToSideWindow(updatedCode1, updatedCode2, editor, project, textRange)
 
 
