@@ -22,6 +22,9 @@
         <annotator language="kotlin" implementationClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
         <dynamicPluginListener implementationClass="technicaldebt_plugin_fall2024.listeners.PluginReloader"/>
 
+
+        <depends>com.intellij.java</depends>
+
         <applicationConfigurable
                 groupId="tools"
                 instance="com.intellij.ml.llm.template.settings.LLMConfigurable"

@@ -91,22 +91,30 @@ fun sendOllamaRequest(
     llmRequestProvider: LLMRequestProvider = OllamaRequestProvider,
 
 ): LLMBaseResponse? {
+    val selectedModel = LLMSettingsManager.getInstance().ollamaModel
+
     val request =
-        llmRequestProvider.createOllamaRequest(OllamaBody("llama2", prompt = prompt))
+        llmRequestProvider.createOllamaRequest(OllamaBody(model = selectedModel, prompt = prompt))
     return sendRequest(project, request)
 }
 
 fun sendChatRequest(
-    project: Project,
-    messages: List<OpenAiChatMessage>,
-    model: String,
-    llmRequestProvider: LLMRequestProvider = GPTRequestProvider
+        project: Project,
+        messages: List<OpenAiChatMessage>,
+        model: String,
+        llmRequestProvider: LLMRequestProvider = GPTRequestProvider,
+        temperature: Double = 1.1,
+        topP: Double = 0.9,
+        numberOfSuggestions: Int = 1
 ): LLMBaseResponse? {
     val request =
         llmRequestProvider.createChatGPTRequest(
         OpenAiChatRequestBody(
             model = llmRequestProvider.chatModel,
-            messages = messages
+            messages = messages,
+            temperature = temperature,
+            topP = topP,
+            numberOfSuggestions = numberOfSuggestions
         )
     )
     return sendRequest(project, request)
