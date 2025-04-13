@@ -239,7 +239,6 @@ abstract class ApplyTransformationIntention(
                             response1.getSuggestions().firstOrNull()?.let {
                                 logger.info("Suggested change: $it")
                                 updatedCode1 = it.text
-
                                 if (updatedCode1.contains("```")) {
                                     updatedCode1 = updatedCode1
                                         .replace("```java", "")
@@ -247,7 +246,6 @@ abstract class ApplyTransformationIntention(
                                 }
                             }
                         }
-
                         if (response2 != null) {
                             var suggestions = response2.getSuggestions()
                             if (suggestions.isEmpty()) {
@@ -267,7 +265,6 @@ abstract class ApplyTransformationIntention(
 
 
                         outputToSideWindow(updatedCode1, updatedCode2, editor, project, textRange)
-
 
 
                 }
