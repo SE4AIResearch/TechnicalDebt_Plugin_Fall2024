@@ -64,7 +64,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         table.isEnabled = false
         table.getColumnModel().getColumn(1).cellRenderer = TextAreaRenderer()
         table.setCellSelectionEnabled(true)
+        
         table.setRowSelectionAllowed(true)
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
 
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
