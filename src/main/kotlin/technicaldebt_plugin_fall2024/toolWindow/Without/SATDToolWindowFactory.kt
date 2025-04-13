@@ -31,8 +31,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val toolWindowPanel = JPanel(BorderLayout())
-        val tabbedPane = JTabbedPane()
-        //JBPanel instead of BorderLayout
+//        val tabbedPane = JTabbedPane()
 
         val label = JBLabel("Retrieve the latest SATD data: ")
         val button = JButton("Fetch").apply {
@@ -44,12 +43,16 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             toolTipText = "Load the SATD records into the table"
         }
 
-        val topPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
-        topPanel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        topPanel.add(label)
-        topPanel.add(button)
-        toolWindowPanel.add(topPanel, BorderLayout.SOUTH)
-        //Changed to FlowLayout
+        val resolutionLabel = JBLabel("Resolution:")
+        val refactoringLabel = JBLabel("Refactoring:")
+
+        val bottomPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
+        bottomPanel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        bottomPanel.add(label)
+        bottomPanel.add(button)
+        bottomPanel.add(resolutionLabel)
+        bottomPanel.add(refactoringLabel)
+        toolWindowPanel.add(bottomPanel, BorderLayout.SOUTH)
 
         val tableModel = object : DefaultTableModel(){
             override fun isCellEditable(row: Int, column: Int): Boolean = false
@@ -84,6 +87,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 val file_id = table.getValueAt(row, 0) as Int
 
                 if (e.clickCount == 1) {
+                    val (resolution, refactoring) = satdDatabaseManager.getResolutionAndRefactorings(project.name, file_id, label)
+                    resolutionLabel.text = "Resolution: $resolution"
+                    refactoringLabel.text = "Refactoring: $refactoring"
                     table.setRowSelectionInterval(row, row)
 
                 }
