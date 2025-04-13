@@ -1,4 +1,8 @@
-package com.technicaldebt_plugin_fall2024.models
+package technicaldebt_plugin_fall2024.models
+
+import com.technicaldebt_plugin_fall2024.models.LLMBaseRequest
+import com.technicaldebt_plugin_fall2024.models.LLMBaseResponse
+import com.technicaldebt_plugin_fall2024.models.LLMResponseChoice
 
 class MockResponse(private val response: String) : LLMBaseResponse {
     override fun getSuggestions(): List<LLMResponseChoice> = listOf(LLMResponseChoice(response, ""))
