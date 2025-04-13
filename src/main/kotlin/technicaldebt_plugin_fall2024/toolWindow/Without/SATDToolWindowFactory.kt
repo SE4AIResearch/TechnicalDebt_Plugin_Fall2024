@@ -31,6 +31,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val toolWindowPanel = JPanel(BorderLayout())
+        val tabbedPane = JTabbedPane()
 
         val label = JBLabel("Retrieve the latest SATD data: ")
         val button = JButton("Fetch").apply {
@@ -41,8 +42,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             font = Font("Arial", Font.BOLD, 12)
             toolTipText = "Load the SATD records into the table"
         }
-
-
 
         val topPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
         topPanel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -67,25 +66,18 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         table.setCellSelectionEnabled(true)
         table.setRowSelectionAllowed(true)
 
-        table.selectionModel.addListSelectionListener { event ->
-            if (!event.valueIsAdjusting) {
-                val selectedRow = table.selectedRow
-                if (selectedRow != -1) {
-                    for (i in 0 until table.columnCount) {
-                        val value = table.getValueAt(selectedRow, i)
-                        println("Column $i: $value")
-                    }
-                }
-            }
-        }
-
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
-                if (e.clickCount == 2) {
-                    val row = table.rowAtPoint(e.point)
-                    val path = table.getValueAt(row, 2) as String
-                    val startLineStr = table.getValueAt(row, 3) as Int
-                    val line = startLineStr.toInt()
+                val row = table.rowAtPoint(e.point)
+                val path = table.getValueAt(row, 2) as String
+                val line = table.getValueAt(row, 3) as Int
+
+                val file_id = table.getValueAt(row, 0) as Int
+
+                if (e.clickCount == 1) {
+                    table.setRowSelectionInterval(row, row)
+                }
+                else if (e.clickCount == 2){
                     satdFileManager.navigateToCode(project, line, path)
                 }
             }
@@ -96,16 +88,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         scrollPane.border = BorderFactory.createEmptyBorder(5, 10, 10, 10)
         toolWindowPanel.add(scrollPane, BorderLayout.CENTER)
 
-        val tableModel2 = DefaultTableModel()
-        tableModel2.addColumn("SATD ID")
-        tableModel2.addColumn("First File")
-        tableModel2.addColumn("Second File")
-        tableModel2.addColumn("Resolution")
 
-        val table2 = JTable(tableModel2)
-        table2.isEnabled = false
-        val scrollPane2 = JBScrollPane(table2, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED)
-
+        // Start mining SATD here
         val testRepo = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/test_repo.csv"
         ApplicationManager.getApplication().executeOnPooledThread {
             satdFileManager.writeTestRepo(testRepo, project)
@@ -124,7 +108,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             } else {
                 val message = "Loading existing SATD data for this  project. May not include most recent commits. Click \"Fetch SATD Data\" to update data"
                 Messages.showWarningDialog(message, "")
-                satdDatabaseManager.loadDatabase(tableModel, label, table, tableModel2, table2, project.name, button)
+                satdDatabaseManager.loadDatabase(tableModel, label, table, project.name, button)
             }
         } catch (e: IOException) {
             label.text = "Error: " + e.message
@@ -133,7 +117,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         button.addActionListener {
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
                 {
-                    satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, tableModel2, table2, project.name, button)
+                    satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, project.name, button)
                 },
                 "Fetching SATD Data",
                 false,
