@@ -459,9 +459,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                     val runButton = JButton("▶ Run").apply {
                         toolTipText = "Execute the current file"
                         isFocusPainted = false
-                        preferredSize = Dimension(24, 24)
-                        minimumSize = Dimension(24, 24)
-                        maximumSize = Dimension(24, 24)
+                        margin = Insets(5, 15, 5, 15)
                         addActionListener {
                             editor1Selected = true
                             editor2Selected = false
@@ -511,9 +509,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                     val runButton = JButton("▶ Run").apply {
                         toolTipText = "Execute the current file"
                         isFocusPainted = false
-                        preferredSize = Dimension(24, 24)
-                        minimumSize = Dimension(24, 24)
-                        maximumSize = Dimension(24, 24)
+                        margin = Insets(5, 15, 5, 15)
                         addActionListener {
                             editor2Selected = true
                             editor1Selected = false

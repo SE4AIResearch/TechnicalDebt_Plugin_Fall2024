@@ -75,15 +75,27 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             satdFileManager.writeTestRepo(testRepo, project)
         }
 
+
+        table.setRowSelectionAllowed(true)
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
+
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
-                if (e.clickCount == 2) {
-                    val row = table.rowAtPoint(e.point)
-                    val path = table.getValueAt(row, 2) as String
-                    val startLineStr = table.getValueAt(row, 3) as String
-                    val line = startLineStr.toInt()
+
+                val row = table.rowAtPoint(e.point)
+                val path = table.getValueAt(row, 2) as String
+                val startLineStr = table.getValueAt(row, 3) as Int
+                val line = startLineStr.toInt()
+
+                if (e.clickCount == 1) {
+                    table.setRowSelectionInterval(row, row)
+                }
+                else if (e.clickCount == 2){
                     satdFileManager.navigateToCode(project, line, path)
                 }
+
+
+
             }
         })
 
