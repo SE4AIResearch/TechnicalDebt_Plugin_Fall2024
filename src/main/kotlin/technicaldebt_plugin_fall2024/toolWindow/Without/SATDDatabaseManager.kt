@@ -14,8 +14,8 @@ import javax.swing.JTable
 import javax.swing.table.DefaultTableModel
 
 class SATDDatabaseManager {
-    fun initialize(label: JBLabel, projectName: String, button: JButton) {
-        button.isEnabled = false
+    fun initialize(label: JBLabel, projectName: String) {
+
         val sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql"
         val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
 
@@ -53,7 +53,7 @@ class SATDDatabaseManager {
             label.text = "Error: " + e.message
         }
 
-        button.isEnabled = true
+
     }
     fun loadDatabase(
         tableModel: DefaultTableModel,
@@ -62,9 +62,8 @@ class SATDDatabaseManager {
         tableModel2: DefaultTableModel,
         table2: JTable,
         projectName: String,
-        button: JButton
     ) {
-        button.isEnabled = false
+
         tableModel.rowCount = 0
         tableModel2.rowCount = 0
         val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
@@ -130,7 +129,7 @@ class SATDDatabaseManager {
             label.text = "Error: " + e.message
         }
 
-        button.isEnabled = true
+
     }
     fun initializeAndConnectDatabase(
         tableModel: DefaultTableModel,
@@ -139,9 +138,8 @@ class SATDDatabaseManager {
         tableModel2: DefaultTableModel,
         table2: JTable,
         projectName: String,
-        button: JButton
     ) {
-        button.isEnabled = false
+
         tableModel.rowCount = 0
         tableModel2.rowCount = 0
         val sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql"
@@ -274,7 +272,6 @@ class SATDDatabaseManager {
             label.text = "Connection failed: " + e.message
         }
 
-        button.isEnabled = true
     }
 
 }
