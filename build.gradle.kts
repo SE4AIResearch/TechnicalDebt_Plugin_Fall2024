@@ -58,7 +58,7 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
 
-    implementation("org.xerial:sqlite-jdbc:3.36.0.3")
+    implementation("org.xerial:sqlite-jdbc:3.49.1.0")
     implementation(files("lib/satd_detector.jar"))
 
     // If com.technicaldebt_plugin_fall2024 is a local JAR, use this instead:
