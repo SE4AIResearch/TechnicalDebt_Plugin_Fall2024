@@ -469,19 +469,37 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                         fetchQuery = "SELECT * FROM SATD"
                         rs = stmt.executeQuery(fetchQuery)
 
-                        val i = 0
                         while (rs.next()) {
                             val satd_id = rs.getInt("satd_id")
                             val first_file = rs.getInt("first_file")
                             val second_file = rs.getInt("second_file")
                             val resolution = rs.getString("resolution")
+                            val second_commit = rs.getString("second_commit")
+
+                            val refactoringsQuery = "SELECT type FROM RefactoringsRmv WHERE commit_hash = ?"
+                            val pstmt = conn.prepareStatement(refactoringsQuery)
+                            pstmt.setString(1, second_commit)
+                            val refactoringsRs = pstmt.executeQuery()
+
+                            println("Looking for commit_hash: '${second_commit}'")
+                                                
+                            val refactorings = if (refactoringsRs.next() && resolution == "SATD_REMOVED") {
+                                val found = refactoringsRs.getString("type")
+                                println(" Match found: $found")
+                                found
+                            } else {
+                                println("No match found")
+                                "N/A"
+                            }
+
                             SwingUtilities.invokeLater {
                                 tableModel2.addRow(
                                     arrayOf<Any>(
                                         satd_id,
                                         first_file,
                                         second_file,
-                                        resolution
+                                        resolution,
+                                        refactorings
                                     )
                                 )
                             }
