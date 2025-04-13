@@ -32,22 +32,22 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val toolWindowPanel = JPanel(BorderLayout())
 
-        val label = JBLabel("Retrieve the latest SATD data: ")
-        val button = JButton("Fetch").apply {
-            icon = ImageIcon("src/main/resources/assets/load.png")
-            preferredSize = Dimension(140, 30)
-            background = Color(0x2E8B57)
-            foreground = Color.WHITE
-            font = Font("Arial", Font.BOLD, 12)
-            toolTipText = "Load the SATD records into the table"
-        }
+        val label = JBLabel("Right-click in the table area to update SATD data")
+        // val button = JButton("Fetch").apply {
+        //     icon = ImageIcon("src/main/resources/assets/load.png")
+        //     preferredSize = Dimension(140, 30)
+        //     background = Color(0x2E8B57)
+        //     foreground = Color.WHITE
+        //     font = Font("Arial", Font.BOLD, 12)
+        //     toolTipText = "Load the SATD records into the table"
+        // }
 
 
 
         val topPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
         topPanel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
         topPanel.add(label)
-        topPanel.add(button)
+        //topPanel.add(button)
         toolWindowPanel.add(topPanel, BorderLayout.SOUTH)
 
         val tableModel = DefaultTableModel()
@@ -120,20 +120,34 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val db = File(PathManager.getConfigPath() + "/databases", project.name + ".db")
         try {
             if (db.createNewFile()) {
-                satdDatabaseManager.initialize(label, project.name, button)
+                satdDatabaseManager.initialize(label, project.name)
             } else {
-                val message = "Loading existing SATD data for this  project. May not include most recent commits. Click \"Fetch SATD Data\" to update data"
+                val message = "Loading existing SATD data for this  project. May not include most recent commits. Right-click and select \"Fetch SATD Data\" to update data"
                 Messages.showWarningDialog(message, "")
-                satdDatabaseManager.loadDatabase(tableModel, label, table, tableModel2, table2, project.name, button)
+                satdDatabaseManager.loadDatabase(tableModel, label, table, tableModel2, table2, project.name)
             }
         } catch (e: IOException) {
             label.text = "Error: " + e.message
         }
+        
+        // Create context menu for tables
+        val contextMenu = JPopupMenu()
+        val fetchSATDMenuItem = JMenuItem("Fetch SATD Data")
+        contextMenu.add(fetchSATDMenuItem)
 
-        button.addActionListener {
+        // Add context menu to both tables
+        setupContextMenu(table, contextMenu)
+        setupContextMenu(table2, contextMenu)
+
+        // Add context menu to scrollpanes (for when tables are empty)
+        setupContextMenu(scrollPane.viewport, contextMenu)
+        setupContextMenu(scrollPane2.viewport, contextMenu)
+        
+        // Set action for fetch SATD menu item
+        fetchSATDMenuItem.addActionListener {
             ProgressManager.getInstance().runProcessWithProgressSynchronously(
                 {
-                    satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, tableModel2, table2, project.name, button)
+                    satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, tableModel2, table2, project.name)
                 },
                 "Fetching SATD Data",
                 false,
@@ -144,6 +158,10 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val contentFactory = ContentFactory.getInstance()
         val content = contentFactory.createContent(toolWindowPanel, "", false)
         toolWindow.contentManager.addContent(content)
+    }
+
+    private fun setupContextMenu(component: JComponent, contextMenu: JPopupMenu) {
+        component.componentPopupMenu = contextMenu
     }
 
     class TextAreaRenderer : JTextArea(), TableCellRenderer {
