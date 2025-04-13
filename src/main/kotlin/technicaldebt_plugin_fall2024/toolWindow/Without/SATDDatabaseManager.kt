@@ -4,12 +4,14 @@ import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.progress.ProgressManager
 import javax.swing.JButton
 import com.intellij.ui.components.JBLabel
+import com.jetbrains.rhizomedb.rql.InExpression
 import technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory.Companion.adjustColumnWidths
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.sql.DriverManager
+import java.sql.ResultSet
 import javax.swing.JTable
 import javax.swing.table.DefaultTableModel
 
@@ -128,6 +130,52 @@ class SATDDatabaseManager {
 
         button.isEnabled = true
     }
+
+    fun getResolutionAndRefactorings(
+        projectName: String,
+        focusedFileID: Int,
+        label: JBLabel
+    ): Pair<String, String> {
+        try {
+            val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
+            val url = "jdbc:sqlite:$databasePath"
+            DriverManager.getConnection(url).use { conn ->
+                conn.createStatement().use { stmt ->
+                    // Displaying refactoring and resolution
+                    val getResolutionQuery = "SELECT resolution, second_commit FROM SATD WHERE second_file=${focusedFileID}"
+                    val resolutionRS = stmt.executeQuery(getResolutionQuery)
+
+                    if(resolutionRS.next()) {
+                        val resolution = resolutionRS.getString("resolution")
+                        val secondCommit = resolutionRS.getString("second_commit")
+
+                        val refactoringsQuery = "SELECT type FROM RefactoringsRmv WHERE commit_hash = ?"
+                        conn.prepareStatement(refactoringsQuery).use { pstmt ->
+                            pstmt.setString(1, secondCommit)
+                            val refRs = pstmt.executeQuery()
+
+                            val refactoring = if (refRs.next()) {
+                                refRs.getString("type")
+                            } else {
+                                "N/A"
+                            }
+
+                            return Pair(resolution, refactoring)
+                        }
+                    }
+                }
+            }
+
+
+        } catch (e: Exception) {
+            label.text = "Connection failed: " + e.message
+
+        }
+
+        // Return fallback in case of failure or no data
+        return Pair("N/A", "N/A")
+    }
+
     fun initializeAndConnectDatabase(
         tableModel: DefaultTableModel,
         label: JBLabel,
@@ -227,6 +275,8 @@ class SATDDatabaseManager {
                         tableModel.addRow(arrayOf(f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method))
                     }
 
+
+
                     val fetchQuerySATD = "SELECT * FROM SATD"
                     val SATDrs = stmt.executeQuery(fetchQuerySATD)
                     while (SATDrs.next()) {
@@ -251,6 +301,8 @@ class SATDDatabaseManager {
                             //println("No match found")
                             "N/A"
                         }
+
+
 
                         
                     }
