@@ -32,6 +32,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val toolWindowPanel = JPanel(BorderLayout())
         val tabbedPane = JTabbedPane()
+        //JBPanel instead of BorderLayout
 
         val label = JBLabel("Retrieve the latest SATD data: ")
         val button = JButton("Fetch").apply {
@@ -48,8 +49,11 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         topPanel.add(label)
         topPanel.add(button)
         toolWindowPanel.add(topPanel, BorderLayout.SOUTH)
+        //Changed to FlowLayout
 
-        val tableModel = DefaultTableModel()
+        val tableModel = object : DefaultTableModel(){
+            override fun isCellEditable(row: Int, column: Int): Boolean = false
+        }
         tableModel.addColumn("File ID")
         tableModel.addColumn("Comment")
         tableModel.addColumn("Path")
@@ -61,11 +65,13 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val table = JTable(tableModel)
         table.autoResizeMode = JTable.AUTO_RESIZE_OFF
         table.getColumnModel().getColumn(1).preferredWidth = 500
-        table.isEnabled = false
+        table.isEnabled = true
         table.getColumnModel().getColumn(1).cellRenderer = TextAreaRenderer()
-        table.setCellSelectionEnabled(true)
-        
+
+        table.setCellSelectionEnabled(false)
+        table.setColumnSelectionAllowed(false)
         table.setRowSelectionAllowed(true)
+
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
 
         table.addMouseListener(object : MouseAdapter() {
@@ -74,10 +80,12 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 val path = table.getValueAt(row, 2) as String
                 val line = table.getValueAt(row, 3) as Int
 
+
                 val file_id = table.getValueAt(row, 0) as Int
 
                 if (e.clickCount == 1) {
                     table.setRowSelectionInterval(row, row)
+
                 }
                 else if (e.clickCount == 2){
                     satdFileManager.navigateToCode(project, line, path)
