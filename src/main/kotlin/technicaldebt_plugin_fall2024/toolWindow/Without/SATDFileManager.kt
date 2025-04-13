@@ -11,7 +11,7 @@ import java.io.*
 import java.util.stream.Collectors
 
 class SATDFileManager {
-    fun navigateToCode(project: Project, lineNumber: Int, path: String) {
+    fun navigateToCode(project: Project, lineNumber: Int, path: String): Boolean {
         val homePath = project.basePath
         val fullPath = "$homePath/$path"
         val file = LocalFileSystem.getInstance().findFileByPath(fullPath)
@@ -20,19 +20,21 @@ class SATDFileManager {
             val message = "File not found at given path"
             val title = ""
             Messages.showErrorDialog(message, title)
-            return
+            return false
         }
         FileEditorManager.getInstance(project).openFile(file, true)
         val editor = FileEditorManager.getInstance(project).selectedTextEditor
         if (editor == null) {
             println("No editor is currently open")
-            return
+            return false
         }
         val caretModel = editor.caretModel
         if (lineNumber > 0 && lineNumber <= editor.document.lineCount) {
             caretModel.moveToLogicalPosition(LogicalPosition(lineNumber - 1, 0))
             editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
         }
+        return true
+
     }
 
     fun getGitHubUrl(project: Project): String? {

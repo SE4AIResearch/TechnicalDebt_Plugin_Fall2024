@@ -75,8 +75,17 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val resolutionLabel = JBLabel("Resolution:")
         val refactoringLabel = JBLabel("Refactoring:")
 
+        val sendToLLMButton = JButton("Send to LLM").apply {
+            isEnabled = false
+        }
+
+        sendToLLMButton.addActionListener {
+            println("hello")
+        }
+
         val bottomPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
         bottomPanel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        bottomPanel.add(sendToLLMButton)
         bottomPanel.add(label)
         bottomPanel.add(button)
         bottomPanel.add(resolutionLabel)
@@ -116,6 +125,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 val file_id = table.getValueAt(row, 0) as Int
 
                 if (e.clickCount == 1) {
+                    sendToLLMButton.isEnabled = false
+
                     val (resolution, refactoring) = satdDatabaseManager.getResolutionAndRefactorings(project.name, file_id, label)
                     resolutionLabel.text = "Resolution: $resolution"
                     refactoringLabel.text = "Refactoring: $refactoring"
@@ -123,7 +134,11 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
                 }
                 else if (e.clickCount == 2){
-                    satdFileManager.navigateToCode(project, line, path)
+                    val jumped = satdFileManager.navigateToCode(project, line, path)
+
+                    if (jumped){
+                        sendToLLMButton.isEnabled = true
+                    }
                     //invoke
 
                     val editor = getCurrentEditor(project)
