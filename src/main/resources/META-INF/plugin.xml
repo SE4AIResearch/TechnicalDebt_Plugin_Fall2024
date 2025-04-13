@@ -27,24 +27,24 @@
 
         <applicationConfigurable
                 groupId="tools"
-                instance="com.intellij.ml.llm.template.settings.LLMConfigurable"
+                instance="com.technicaldebt_plugin_fall2024.settings.LLMConfigurable"
                 id="ml.llm.LLMConfigurable"
                 bundle="messages.LLMBundle"
                 key="settings.configurable.display.name"/>
         <applicationConfigurable
                 groupId="ml.llm.LLMConfigurable"
-                instance="com.intellij.ml.llm.template.settings.openai.AdvancedSettingsConfigurable"
+                instance="com.technicaldebt_plugin_fall2024.settings.openai.AdvancedSettingsConfigurable"
                 id="ml.llm.openai.AdvancedConfigurable"
                 bundle="messages.LLMBundle"
                 key="settings.configurable.openai.advanced.display.name"/>
 
         <intentionAction>
-            <className>com.intellij.ml.llm.template.intentions.ApplyCustomEditIntention</className>
+            <className>com.technicaldebt_plugin_fall2024.intentions.ApplyCustomEditIntention</className>
             <bundleName>messages.LLMBundle</bundleName>
             <categoryKey>intention.category.codex</categoryKey>
         </intentionAction>
 
-        <toolWindow id="LLM Output" anchor="right" factoryClass="com.intellij.ml.llm.template.ui.LLMOutputToolWindow"/>
+        <toolWindow id="LLM Output" anchor="right" factoryClass="technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow"/>
 
         <registryKey defaultValue="false"
                      description="If enabled, emulates requests instead of using OpenAI API. Used for debug purposes."

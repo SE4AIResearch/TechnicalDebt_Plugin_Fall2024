@@ -39,16 +39,11 @@ open class OllamaBaseRequest<Body>(body: OllamaBody) : LLMBaseRequest<OllamaBody
 
         return HttpRequests.post(url, "application/json").connect {request ->
                 val jsonPayload = Gson().toJson(payload)
-                println("Payload: $jsonPayload")
-
-                println("Awaiting response from ${OllamaRequestProvider.chatModel}...")
                 request.write(jsonPayload)
 
                 val responseCode = (request.connection as HttpURLConnection).responseCode
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     val response = request.readString()
-
-                    println("Received response: ${response}")
 
                     GsonBuilder().serializeNulls().create().fromJson(response, OllamaResponse::class.java)
                 } else {

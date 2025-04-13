@@ -1,6 +1,7 @@
 package com.technicaldebt_plugin_fall2024.settings
 
-import com.technicaldebt_plugin_fall2024.LLMBundle
+import LLMBundle
+import technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.ShowSettingsUtil
@@ -8,21 +9,19 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.*
-import com.intellij.ui.layout.ComponentPredicate
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JTextArea
-import javax.swing.JScrollPane
-
-
 
 
 class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurable.display.name")) {
     private val settings = service<LLMSettingsManager>()
+    private val window = LLMOutputToolWindow()
 
     private lateinit var geminiAiKeyRow: Row
     private lateinit var openAiKeyRow: Row
     private lateinit var openAiOrgRow: Row
     private lateinit var ollamaServerRow: Row
+    private lateinit var ollamaModelRow: Row
 
     private val outputTextArea = JTextArea().apply {
         isEditable = false  // Prevent user input
@@ -57,11 +56,26 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
 
             ollamaServerRow.visible(false)
 
+            ollamaModelRow = row("Ollama Model:") {
+                comboBox(
+                        DefaultComboBoxModel(arrayOf("llama2", "deepseek"))
+                ).bindItem(
+                        { settings.ollamaModel },
+                        { settings.ollamaModel = it ?: "llama2" }
+                ).apply {
+                    component.toolTipText = "Choose a model like llama2 or deepseek"
+                }
+            }
+            ollamaModelRow.visible(false)
+
+
             geminiAiKeyRow = row(LLMBundle.message("settings.configurable.gemini.key.label")) {
                 passwordField().bindText(
                         settings::getGeminiKey, settings::setGeminiKey
                 )
             }
+
+            geminiAiKeyRow.visible(false)
 
             row(LLMBundle.message("settings.configurable.llm.provider.label")) {
                 providerComboBox = comboBox(
@@ -92,6 +106,7 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
         openAiKeyRow.visible(isOpenAi)
         openAiOrgRow.visible(isOpenAi)
         ollamaServerRow.visible(isOllama)
+        ollamaModelRow.visible(isOllama)
 
         apply()
 
@@ -103,8 +118,9 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
         outputTextArea.text = output
     }
     override fun apply() {
+        window.updateLLMType()
         super.apply()
-        updateVisibility()
+        //updateVisibility()
     }
 }
 

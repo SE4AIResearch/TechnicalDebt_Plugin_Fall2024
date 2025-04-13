@@ -15,12 +15,10 @@ open class OpenAIBaseRequest<Body>(path: String, body: Body) : LLMBaseRequest<Bo
         val apiKey = CredentialsHolder.getInstance().getOpenAiApiKey()?.ifEmpty { null }
             ?: throw AuthorizationException("OpenAI API Key is not provided")
 
+
         return HttpRequests.post(url, "application/json")
             .tuner {
                 it.setRequestProperty("Authorization", "Bearer $apiKey")
-                CredentialsHolder.getInstance().getOpenAiOrganization()?.let { organization ->
-                    it.setRequestProperty("OpenAI-Organization", organization)
-                }
             }
             .connect { request ->
                 request.write(GsonBuilder().create().toJson(body))

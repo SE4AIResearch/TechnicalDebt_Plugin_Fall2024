@@ -1,15 +1,15 @@
-package com.intellij.ml.llm.template.intentions
+package com.technicaldebt_plugin_fall2024.intentions
 
-//import com.intellij.ml.llm.template.models.CodexRequestProvider
-//import com.intellij.ml.llm.template.models.sendEditRequest
+//import com.technicaldebt_plugin_fall2024.models.CodexRequestProvider
+//import com.technicaldebt_plugin_fall2024.models.sendEditRequest
 import com.intellij.codeInsight.intention.IntentionAction
-import com.intellij.ml.llm.template.LLMBundle
-import com.intellij.ml.llm.template.models.*
-import com.intellij.ml.llm.template.models.gemini.GeminiChatMessage
-import com.intellij.ml.llm.template.models.gemini.GeminiRequestBody
-import com.intellij.ml.llm.template.models.ollama.OllamaBody
-import com.intellij.ml.llm.template.models.openai.OpenAiChatMessage
-import com.intellij.ml.llm.template.settings.LLMSettingsManager
+import com.technicaldebt_plugin_fall2024.LLMBundle
+import com.technicaldebt_plugin_fall2024.models.*
+import com.technicaldebt_plugin_fall2024.models.gemini.GeminiChatMessage
+import com.technicaldebt_plugin_fall2024.models.gemini.GeminiRequestBody
+import com.technicaldebt_plugin_fall2024.models.ollama.OllamaBody
+import com.technicaldebt_plugin_fall2024.models.openai.OpenAiChatMessage
+import com.technicaldebt_plugin_fall2024.settings.LLMSettingsManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
@@ -28,7 +28,7 @@ import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
 import java.util.*
-import com.intellij.ml.llm.template.ui.LLMOutputToolWindow
+import com.technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow
 
 @Suppress("UnstableApiUsage")
 abstract class ApplyTransformationIntention(
@@ -46,7 +46,7 @@ abstract class ApplyTransformationIntention(
         }
     }
 
-    private val logger = Logger.getInstance("#com.intellij.ml.llm")
+    private val logger = Logger.getInstance("#com.technicaldebt_plugin_fall2024")
     private fun extractBracketContent(ch: String, str: String): String {
         val sb = StringBuilder()
         var inBracket = false
