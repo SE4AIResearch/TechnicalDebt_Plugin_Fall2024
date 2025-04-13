@@ -1,6 +1,6 @@
-package com.intellij.ml.llm.template.intentions
+package com.technicaldebt_plugin_fall2024.intentions
 
-import com.intellij.ml.llm.template.LLMBundle
+import com.technicaldebt_plugin_fall2024.LLMBundle
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 

@@ -1,6 +1,6 @@
 package com.technicaldebt_plugin_fall2024.settings.openai
 
-import com.technicaldebt_plugin_fall2024.LLMBundle
+import LLMBundle
 import com.technicaldebt_plugin_fall2024.settings.LLMSettingsManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable

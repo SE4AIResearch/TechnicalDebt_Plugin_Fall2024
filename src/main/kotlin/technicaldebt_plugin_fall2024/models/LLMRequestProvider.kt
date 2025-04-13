@@ -8,8 +8,7 @@ import com.technicaldebt_plugin_fall2024.models.openai.*
 import com.technicaldebt_plugin_fall2024.settings.LLMSettingsManager
 import com.intellij.openapi.diagnostic.Logger
 import com.technicaldebt_plugin_fall2024.settings.LLMSettingsManager.LLMProvider
-
-
+import technicaldebt_plugin_fall2024.models.MockCompletionRequests
 
 
 /**
