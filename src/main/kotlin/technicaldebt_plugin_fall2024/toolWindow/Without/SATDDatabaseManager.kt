@@ -102,7 +102,25 @@ class SATDDatabaseManager {
                         val first_file = rs.getInt("first_file")
                         val second_file = rs.getInt("second_file")
                         val resolution = rs.getString("resolution")
-                        tableModel2.addRow(arrayOf(satd_id, first_file, second_file, resolution))
+                        val second_commit = rs.getString("second_commit")
+
+                        val refactoringsQuery = "SELECT type FROM RefactoringsRmv WHERE commit_hash = ?"
+                        val pstmt = conn.prepareStatement(refactoringsQuery)
+                        pstmt.setString(1, second_commit)
+                        val refactoringsRs = pstmt.executeQuery()
+                        println("Looking for commit_hash: '${second_commit}'")
+
+                                                
+                        val refactorings = if (refactoringsRs.next()) {
+                            val found = refactoringsRs.getString("type")
+                            println(" Match found: $found")
+                            found
+                        } else {
+                            println("No match found")
+                            "N/A"
+                        }
+                        
+                        tableModel2.addRow(arrayOf(satd_id, first_file, second_file, resolution, refactorings));
                     }
 
                     adjustColumnWidths(table)
@@ -169,6 +187,12 @@ class SATDDatabaseManager {
                     }
 
                     try {
+
+                        //println("libPath = $libPath")
+                        //println("JAR path = $libPath/target/satd-analyzer-jar-with-all-dependencies.jar")
+                        //println("CSV path = $libPath/test_repo.csv")
+                        //println("DB path = $databasePath")
+
                         val processBuilder = ProcessBuilder(
                             "java",
                             "--add-opens",
@@ -217,7 +241,26 @@ class SATDDatabaseManager {
                         val first_file = rs.getInt("first_file")
                         val second_file = rs.getInt("second_file")
                         val resolution = rs.getString("resolution")
-                        tableModel2.addRow(arrayOf(satd_id, first_file, second_file, resolution))
+                        val second_commit = rs.getString("second_commit")
+
+                        val refactoringsQuery = "SELECT type FROM RefactoringsRmv WHERE commit_hash = ?"
+                        val pstmt = conn.prepareStatement(refactoringsQuery)
+                        pstmt.setString(1, second_commit)
+                        val refactoringsRs = pstmt.executeQuery()
+                        //println("Looking for commit_hash: '${second_commit}'")
+
+                                                
+                        val refactorings = if (refactoringsRs.next() && resolution == "SATD_REMOVED") {
+                            val found = refactoringsRs.getString("type")
+                            //println(" Match found: $found")
+                            found
+                        } else {
+                            //println("No match found")
+                            "N/A"
+                        }
+
+                        
+                        tableModel2.addRow(arrayOf(satd_id, first_file, second_file, resolution, refactorings));
                     }
 
                     adjustColumnWidths(table)
