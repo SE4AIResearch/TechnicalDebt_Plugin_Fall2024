@@ -125,10 +125,11 @@ abstract class ApplyTransformationIntention(
         }
 
         val instruction = getInstruction(project, editor, satdType) ?: return
-        logger.info("Invoke transformation action with '$instruction' instruction for '$text'")
+        logger.info("Invoke transformat`ion action with '$instruction' instruction for '$text'")
         val task =
             object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
                 override fun run(indicator: ProgressIndicator) {
+
                     var prompt = ""
                     if(satdType.isNotEmpty())
                     {

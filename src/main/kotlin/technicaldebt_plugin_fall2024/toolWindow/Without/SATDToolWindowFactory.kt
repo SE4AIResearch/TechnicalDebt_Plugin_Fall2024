@@ -13,6 +13,8 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.content.ContentFactory
 import technicaldebt_plugin_fall2024.toolWindow.Without.SATDDatabaseManager
 import technicaldebt_plugin_fall2024.toolWindow.Without.SATDFileManager
+import com.intellij.ml.llm.template.intentions.ApplyTransformationIntention
+import com.intellij.openapi.editor.Document
 
 import java.awt.*
 import java.awt.event.MouseAdapter
@@ -24,6 +26,33 @@ import java.nio.file.Paths
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableCellRenderer
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.psi.PsiManager
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiNameIdentifierOwner
+import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.util.PsiUtilBase
+
+fun getCurrentEditor(project: Project): Editor? {
+    return FileEditorManager.getInstance(project).selectedTextEditor
+}
+
+
+private fun getParentNamedElement(editor: Editor): PsiNameIdentifierOwner? {
+    val element = PsiUtilBase.getElementAtCaret(editor)
+    return PsiTreeUtil.getParentOfType(element, PsiNameIdentifierOwner::class.java)
+}
+
+
+private fun getLineTextRange(document: Document, editor: Editor): TextRange {
+    val lineNumber = document.getLineNumber(editor.caretModel.offset)
+    val startOffset = document.getLineStartOffset(lineNumber)
+    val endOffset = document.getLineEndOffset(lineNumber)
+    return TextRange.create(startOffset, endOffset)
+}
 
 class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
     private val satdFileManager = SATDFileManager()
@@ -95,6 +124,34 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 }
                 else if (e.clickCount == 2){
                     satdFileManager.navigateToCode(project, line, path)
+                    //invoke
+
+                    val editor = getCurrentEditor(project)
+
+                    val document = editor?.document
+                    val selectionModel = editor?.selectionModel
+                    val selectedText = selectionModel?.selectedText
+                    if (selectedText != null) {
+                        val textRange = TextRange.create(selectionModel.selectionStart, selectionModel.selectionEnd)
+//                        transform(project, selectedText, editor, textRange)
+                        // We don't want to transform just yet
+                    } else {
+                        val namedElement = editor?.let { getParentNamedElement(it) }
+                        if (namedElement != null) {
+                            val queryText = namedElement.text
+                            val textRange = namedElement.textRange
+                            selectionModel?.setSelection(textRange.startOffset, textRange.endOffset)
+//                            transform(project, queryText, editor, textRange)
+                        } else {
+                            selectionModel?.selectLineAtCaret()
+                            val textRange = editor?.let {
+                                if (document != null) {
+                                    getLineTextRange(document, it)
+                                }
+                            }
+//                            transform(project, document.getText(textRange), editor, textRange)
+                        }
+                    }
                 }
             }
         })
