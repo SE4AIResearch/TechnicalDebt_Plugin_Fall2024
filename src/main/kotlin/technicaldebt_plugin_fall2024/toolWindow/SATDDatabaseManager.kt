@@ -4,14 +4,12 @@ import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.progress.ProgressManager
 import javax.swing.JButton
 import com.intellij.ui.components.JBLabel
-import com.jetbrains.rhizomedb.rql.InExpression
 import technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory.Companion.adjustColumnWidths
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.sql.DriverManager
-import java.sql.ResultSet
 import javax.swing.JTable
 import javax.swing.table.DefaultTableModel
 
@@ -94,33 +92,6 @@ class SATDDatabaseManager {
                         tableModel.addRow(arrayOf(f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method))
                     }
 
-                    fetchQuery = "SELECT * FROM SATD"
-                    rs = stmt.executeQuery(fetchQuery)
-                    while (rs.next()) {
-                        val satd_id = rs.getInt("satd_id")
-                        val first_file = rs.getInt("first_file")
-                        val second_file = rs.getInt("second_file")
-                        val resolution = rs.getString("resolution")
-                        val second_commit = rs.getString("second_commit")
-
-                        val refactoringsQuery = "SELECT type FROM RefactoringsRmv WHERE commit_hash = ?"
-                        val pstmt = conn.prepareStatement(refactoringsQuery)
-                        pstmt.setString(1, second_commit)
-                        val refactoringsRs = pstmt.executeQuery()
-                        println("Looking for commit_hash: '${second_commit}'")
-
-                                                
-                        val refactorings = if (refactoringsRs.next()) {
-                            val found = refactoringsRs.getString("type")
-                            println(" Match found: $found")
-                            found
-                        } else {
-                            println("No match found")
-                            "N/A"
-                        }
-                        
-                    }
-
                     adjustColumnWidths(table)
                 }
             }
@@ -134,45 +105,47 @@ class SATDDatabaseManager {
     fun getResolutionAndRefactorings(
         projectName: String,
         focusedFileID: Int,
-        label: JBLabel
+        refactoringsLabel: JBLabel
     ): Pair<String, String> {
         try {
             val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
             val url = "jdbc:sqlite:$databasePath"
+
             DriverManager.getConnection(url).use { conn ->
                 conn.createStatement().use { stmt ->
-                    // Displaying refactoring and resolution
-                    val getResolutionQuery = "SELECT resolution, second_commit FROM SATD WHERE second_file=${focusedFileID}"
-                    val resolutionRS = stmt.executeQuery(getResolutionQuery)
+                    // Step 1: Get resolution and second commit from SATD
+                    val getResolutionQuery = "SELECT resolution, second_commit FROM SATD WHERE second_file = ?"
+                    conn.prepareStatement(getResolutionQuery).use { pstmt ->
+                        pstmt.setInt(1, focusedFileID)
+                        val rs = pstmt.executeQuery()
 
-                    if(resolutionRS.next()) {
-                        val resolution = resolutionRS.getString("resolution")
-                        val secondCommit = resolutionRS.getString("second_commit")
+                        if (rs.next()) {
+                            val resolution = rs.getString("resolution")
+                            val secondCommit = rs.getString("second_commit")
 
-                        val refactoringsQuery = "SELECT type FROM RefactoringsRmv WHERE commit_hash = ?"
-                        conn.prepareStatement(refactoringsQuery).use { pstmt ->
-                            pstmt.setString(1, secondCommit)
-                            val refRs = pstmt.executeQuery()
+                            // Step 2: Get refactoring from RefactoringsRmv using second_commit
+                            val refactoringsQuery = "SELECT type FROM RefactoringsRmv WHERE commit_hash = ?"
+                            conn.prepareStatement(refactoringsQuery).use { refStmt ->
+                                refStmt.setString(1, secondCommit)
+                                val refRs = refStmt.executeQuery()
 
-                            val refactoring = if (refRs.next()) {
-                                refRs.getString("type")
-                            } else {
-                                "N/A"
+                                val refactoring =
+                                    if (refRs.next()) {
+                                    refRs.getString("type")
+                                } else {
+                                    "N/A"
+                                }
+
+                                return Pair(resolution, refactoring)
                             }
-
-                            return Pair(resolution, refactoring)
                         }
                     }
                 }
             }
-
-
         } catch (e: Exception) {
-            label.text = "Connection failed: " + e.message
-
+            refactoringsLabel.text = "Error fetching refactorings: ${e.message}"
         }
 
-        // Return fallback in case of failure or no data
         return Pair("N/A", "N/A")
     }
 
@@ -274,39 +247,7 @@ class SATDDatabaseManager {
                         val containing_method = SATDInFileRS.getString("containing_method")
                         tableModel.addRow(arrayOf(f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method))
                     }
-
-
-
-                    val fetchQuerySATD = "SELECT * FROM SATD"
-                    val SATDrs = stmt.executeQuery(fetchQuerySATD)
-                    while (SATDrs.next()) {
-                        val satd_id = SATDrs.getInt("satd_id")
-                        val first_file = SATDrs.getInt("first_file")
-                        val second_file = SATDrs.getInt("second_file")
-                        val resolution = SATDrs.getString("resolution")
-                        val second_commit = SATDrs.getString("second_commit")
-
-                        val refactoringsQuery = "SELECT type FROM RefactoringsRmv WHERE commit_hash = ?"
-                        val pstmt = conn.prepareStatement(refactoringsQuery)
-                        pstmt.setString(1, second_commit)
-                        val refactoringsRs = pstmt.executeQuery()
-                        //println("Looking for commit_hash: '${second_commit}'")
-
-                                                
-                        val refactorings = if (refactoringsRs.next() && resolution == "SATD_REMOVED") {
-                            val found = refactoringsRs.getString("type")
-                            //println(" Match found: $found")
-                            found
-                        } else {
-                            //println("No match found")
-                            "N/A"
-                        }
-
-
-
-                        
-                    }
-
+                    
                     adjustColumnWidths(table)
 
                     indicator?.let {

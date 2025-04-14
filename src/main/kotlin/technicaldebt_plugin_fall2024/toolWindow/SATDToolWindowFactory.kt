@@ -110,12 +110,10 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 val row = table.rowAtPoint(e.point)
                 val path = table.getValueAt(row, 2) as String
                 val line = table.getValueAt(row, 3) as Int
-
-
                 val file_id = table.getValueAt(row, 0) as Int
 
                 if (e.clickCount == 1) {
-                    val (resolution, refactoring) = satdDatabaseManager.getResolutionAndRefactorings(project.name, file_id, label)
+                     val (resolution, refactoring) = satdDatabaseManager.getResolutionAndRefactorings(project.name, file_id, label)
                     resolutionLabel.text = "Resolution: $resolution"
                     refactoringLabel.text = "Refactoring: $refactoring"
                     table.setRowSelectionInterval(row, row)
@@ -151,18 +149,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 //                            transform(project, document.getText(textRange), editor, textRange)
                         }
 
-
-                        // Listen for LLM button click
-                        val buttonClicked = true
-
-                        if(buttonClicked)
-                        {
-                            "send to llm"
-                        }
-                        else
-                        {
-                            "fail"
-                        }
 
                     }
                 }
