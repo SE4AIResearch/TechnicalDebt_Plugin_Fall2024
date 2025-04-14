@@ -28,12 +28,11 @@ import javax.swing.table.TableCellRenderer
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.util.TextRange
-import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.psi.PsiManager
-import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
+import com.intellij.ui.JBColor
+import com.intellij.util.ui.JBUI
 
 fun getCurrentEditor(project: Project): Editor? {
     return FileEditorManager.getInstance(project).selectedTextEditor
@@ -62,24 +61,50 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 //        val tabbedPane = JTabbedPane()
 
         val label = JBLabel("Retrieve the latest SATD data: ")
-        val button = JButton("Fetch").apply {
-            icon = ImageIcon("src/main/resources/assets/load.png")
-            preferredSize = Dimension(140, 30)
-            background = Color(0x2E8B57)
-            foreground = Color.WHITE
-            font = Font("Arial", Font.BOLD, 12)
+        val button = JButton("Fetch SATD").apply {
+////            icon = ImageIcon("src/main/resources/assets/load.png")
+//            preferredSize = Dimension(140, 30)
+//            background = Color(0x2E8B57)
+//            foreground = JBColor.WHITE
+//            font = Font("Arial", Font.BOLD, 12)
             toolTipText = "Load the SATD records into the table"
         }
 
-        val resolutionLabel = JBLabel("Resolution:")
-        val refactoringLabel = JBLabel("Refactoring:")
+        val pathLabel = JLabel("Path to SATD: ")
+        val linesLabel = JBLabel("Lines: [,]")
+        val resolutionLabel = JBLabel("Resolution: []")
+        val refactoringLabel = JBLabel("Refactoring: []")
 
-        val bottomPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
-        bottomPanel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        bottomPanel.add(label)
-        bottomPanel.add(button)
-        bottomPanel.add(resolutionLabel)
-        bottomPanel.add(refactoringLabel)
+        val bottomPanel = JPanel(BorderLayout())
+
+        // info on the left
+        val leftPanel = JPanel(GridBagLayout())
+        val leftConstraints = GridBagConstraints().apply {
+            anchor = GridBagConstraints.WEST
+            insets = JBUI.insets(5, 10)
+        }
+        leftPanel.add(pathLabel, leftConstraints)
+        leftConstraints.gridx = 1
+        leftPanel.add(linesLabel, leftConstraints)
+
+        // info on the right
+        val rightPanel = JPanel(GridBagLayout())
+        val rightConstraints = GridBagConstraints().apply {
+            anchor = GridBagConstraints.EAST
+            insets = JBUI.insets(5, 10)
+        }
+        rightPanel.add(resolutionLabel, rightConstraints)
+        rightConstraints.gridx = 1
+        rightPanel.add(refactoringLabel, rightConstraints)
+        rightConstraints.gridx = 2
+        rightPanel.add(button, rightConstraints)
+
+
+        // Add left and right subpanels to bottom panel
+        bottomPanel.add(leftPanel, BorderLayout.WEST)
+        bottomPanel.add(rightPanel, BorderLayout.EAST)
+
+        // Now add this combined bottom panel to the main toolWindowPanel
         toolWindowPanel.add(bottomPanel, BorderLayout.SOUTH)
 
         val tableModel = object : DefaultTableModel(){
@@ -87,17 +112,14 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         }
         tableModel.addColumn("File ID")
         tableModel.addColumn("Comment")
-        tableModel.addColumn("Path")
-        tableModel.addColumn("Start Line")
-        tableModel.addColumn("End Line")
         tableModel.addColumn("Containing Class")
         tableModel.addColumn("Containing Method")
 
         val table = JTable(tableModel)
         table.autoResizeMode = JTable.AUTO_RESIZE_OFF
-        table.getColumnModel().getColumn(1).preferredWidth = 500
+        table.columnModel.getColumn(1).preferredWidth = 500
         table.isEnabled = true
-        table.getColumnModel().getColumn(1).cellRenderer = TextAreaRenderer()
+        table.columnModel.getColumn(1).cellRenderer = TextAreaRenderer()
 
         table.setCellSelectionEnabled(false)
         table.setColumnSelectionAllowed(false)
@@ -108,21 +130,33 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 val row = table.rowAtPoint(e.point)
-                val path = table.getValueAt(row, 2) as String
-                val line = table.getValueAt(row, 3) as Int
-                val file_id = table.getValueAt(row, 0) as Int
+                val fileId = table.getValueAt(row, 0) as Int
+
+                var filePath: String? = null
+                var l1: Int? = null
+                var l2: Int
+
+                val satdInfo = satdDatabaseManager.getSATDTableInfo(project.name, fileId, label)
+                filePath = satdInfo.filePath!!
+                l1 = satdInfo.startLine!!
+                l2 = satdInfo.endLine!!
+
 
                 if (e.clickCount == 1) {
-                     val (resolution, refactoring) = satdDatabaseManager.getResolutionAndRefactorings(project.name, file_id, label)
-                    resolutionLabel.text = "Resolution: $resolution"
-                    refactoringLabel.text = "Refactoring: $refactoring"
+                    pathLabel.text = "Path to SATD: $filePath   "
+                    linesLabel.text = "Lines: [$l1, $l2]"
+                    resolutionLabel.text = "Resolution:[${satdInfo.resolution}]"
+                    refactoringLabel.text = "Refactoring: [${satdInfo.refactoring}]"
+
                     table.setRowSelectionInterval(row, row)
 
                 }
                 else if (e.clickCount == 2){
-                    satdFileManager.navigateToCode(project, line, path)
-                    //invoke
-
+                    if (filePath != null) {
+                        if (l1 != null) {
+                            satdFileManager.navigateToCode(project, l1, filePath)
+                        }
+                    }
                     val editor = getCurrentEditor(project)
 
                     val document = editor?.document
