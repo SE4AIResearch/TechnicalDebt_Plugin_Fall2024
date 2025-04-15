@@ -1,5 +1,6 @@
 package technicaldebt_plugin_fall2024.toolWindow
 
+import technicaldebt_plugin_fall2024.actions.LLMActivator
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.progress.ProgressManager
@@ -14,7 +15,6 @@ import com.intellij.ui.content.ContentFactory
 import technicaldebt_plugin_fall2024.toolWindow.Without.SATDDatabaseManager
 import technicaldebt_plugin_fall2024.toolWindow.Without.SATDFileManager
 import com.intellij.openapi.editor.Document
-
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -29,11 +29,13 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
+import technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow
 
 fun getCurrentEditor(project: Project): Editor? {
     return FileEditorManager.getInstance(project).selectedTextEditor
@@ -78,9 +80,24 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             isEnabled = false
         }
 
+
         sendToLLMButton.addActionListener {
-            println("hello")
+            val editor = getCurrentEditor(project)
+            val document = editor?.document ?: return@addActionListener
+            val selectionModel = editor.selectionModel
+            val selectedText = selectionModel.selectedText ?: return@addActionListener
+            val textRange = TextRange(selectionModel.selectionStart, selectionModel.selectionEnd)
+
+
+
+            val satdType = resolutionLabel.text.removePrefix("Resolution:").trim()
+
+
+            LLMActivator.transform(project, selectedText, editor, textRange, satdType)
+            val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("LLM Output")
+            toolWindow?.show(null)
         }
+
 
         val bottomPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
         bottomPanel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -168,16 +185,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
 
                         // Listen for LLM button click
-                        val buttonClicked = true
 
-                        if(buttonClicked)
-                        {
-                            "send to llm"
-                        }
-                        else
-                        {
-                            "fail"
-                        }
 
                     }
                 }

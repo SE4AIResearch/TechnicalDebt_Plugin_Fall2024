@@ -106,27 +106,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
 
 
 
-        /*val document = editor.document
-        val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
 
-        val virtualFile = psiFile?.virtualFile
-        //val commandLine = virtualFile?.let { GeneralCommandLine("java", "-cp", project.basePath, it.path) }
-
-        val filePath = virtualFile?.path
-        val className = virtualFile?.nameWithoutExtension
-        val projectBase = project.basePath ?: return
-
-        val commandLine = GeneralCommandLine("java", className)
-                .withWorkDirectory(projectBase)
-                .withCharset(Charsets.UTF_8)
-
-        val runManager = RunManager.getInstance(project)
-        val settings: RunnerAndConfigurationSettings =
-                runManager.createConfiguration(className, ApplicationConfiguration::class.java)
-
-        val processHandler = OSProcessHandler(commandLine)
-
-        processHandler.startNotify()*/
 
 
     }
