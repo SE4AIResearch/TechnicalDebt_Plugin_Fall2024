@@ -15,6 +15,14 @@ import com.intellij.ui.content.ContentFactory
 import technicaldebt_plugin_fall2024.toolWindow.Without.SATDDatabaseManager
 import technicaldebt_plugin_fall2024.toolWindow.Without.SATDFileManager
 import com.intellij.openapi.editor.Document
+import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionToolbar
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.ui.components.JBPanel
 
 import java.awt.*
 import java.awt.event.MouseAdapter
@@ -130,7 +138,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         rightConstraints.gridx = 1
         rightPanel.add(refactoringLabel, rightConstraints)
         rightConstraints.gridx = 2
-        rightPanel.add(button, rightConstraints)
+
 
 
         // Add left and right subpanels to bottom panel
@@ -247,26 +255,58 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val db = File(PathManager.getConfigPath() + "/databases", project.name + ".db")
         try {
             if (db.createNewFile()) {
-                satdDatabaseManager.initialize(label, project.name, button)
+                satdDatabaseManager.initialize(label, project.name)
             } else {
                 val message = "Loading existing SATD data for this  project. May not include most recent commits. Click \"Fetch SATD Data\" to update data"
                 Messages.showWarningDialog(message, "")
-                satdDatabaseManager.loadDatabase(tableModel, label, table, project.name, button)
+                satdDatabaseManager.loadDatabase(tableModel, label, table, project.name)
             }
         } catch (e: IOException) {
             label.text = "Error: " + e.message
         }
 
-        button.addActionListener {
-            ProgressManager.getInstance().runProcessWithProgressSynchronously(
-                {
-                    satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, project.name, button)
-                },
-                "Fetching SATD Data",
-                false,
-                project
-            )
-        }
+        val actionGroup = DefaultActionGroup().apply {
+            add(object : AnAction("Fetch SATD", "Load the SATD records into the table", AllIcons.Actions.Refresh) {
+                override fun actionPerformed(e: AnActionEvent) {
+                    ProgressManager.getInstance().runProcessWithProgressSynchronously(
+                            {
+                                satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, project.name)
+                            },
+                            "Fetching SATD Data",
+                            false,
+                            project
+                    )
+                }
+            })
+
+        add(object : AnAction("Send to LLM", "Send selected code to LLM for processing", AllIcons.RunConfigurations.Remote) {
+            override fun update(e: AnActionEvent) {
+                // Only enable the action when text is selected in the editor
+                val editor = getCurrentEditor(project)
+                val selectionModel = editor?.selectionModel
+                e.presentation.isEnabled = selectionModel?.hasSelection() == true
+            }
+
+            override fun actionPerformed(e: AnActionEvent) {
+                val editor = getCurrentEditor(project)
+                val document = editor?.document ?: return
+                val selectionModel = editor.selectionModel
+                val selectedText = selectionModel.selectedText ?: return
+                val textRange = TextRange(selectionModel.selectionStart, selectionModel.selectionEnd)
+
+                val satdType = resolutionLabel.text.removePrefix("Resolution:").trim()
+
+                LLMActivator.transform(project, selectedText, editor, textRange, satdType)
+                val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("LLM Output")
+                toolWindow?.show(null)
+            }
+        })
+
+    }
+
+        val toolbar = ActionManager.getInstance().createActionToolbar("SATDToolbar", actionGroup, true)
+        toolbar.targetComponent = toolWindowPanel
+        toolWindow.setTitleActions(actionGroup.getChildren(null).toList())
 
         val contentFactory = ContentFactory.getInstance()
         val content = contentFactory.createContent(toolWindowPanel, "", false)
@@ -281,12 +321,12 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         }
 
         override fun getTableCellRendererComponent(
-            table: JTable,
-            value: Any?,
-            isSelected: Boolean,
-            hasFocus: Boolean,
-            row: Int,
-            column: Int
+                table: JTable,
+                value: Any?,
+                isSelected: Boolean,
+                hasFocus: Boolean,
+                row: Int,
+                column: Int
         ): Component {
             text = value?.toString() ?: ""
             setSize(table.columnModel.getColumn(column).width, preferredSize.height)
