@@ -109,7 +109,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         centerPanel.add(sendToLLMButton)
 
         bottomPanel.add(centerPanel, BorderLayout.CENTER)
-
+        //wadwa
         // info on the left
         val leftPanel = JPanel(GridBagLayout())
         val leftConstraints = GridBagConstraints().apply {
