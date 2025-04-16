@@ -330,7 +330,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         })
 
     }
-
         val toolbar = ActionManager.getInstance().createActionToolbar("SATDToolbar", actionGroup, true)
         toolbar.targetComponent = toolWindowPanel
         toolWindow.setTitleActions(actionGroup.getChildren(null).toList())
