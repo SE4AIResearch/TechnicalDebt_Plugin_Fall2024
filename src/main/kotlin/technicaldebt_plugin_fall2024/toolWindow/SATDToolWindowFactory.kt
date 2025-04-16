@@ -153,6 +153,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
 
                 if (e.clickCount == 1) {
+                    ActionManager.getInstance().getAction("Send to LLM").templatePresentation.isEnabled = false
 
                     pathLabel.text = "Path to SATD: $filePath   "
                     linesLabel.text = "Lines: [$l1, $l2]"
@@ -163,8 +164,11 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
                 }
                 else if (e.clickCount == 2){
-                    satdFileManager.navigateToCode(project, l1, filePath)
+                    val jumped = satdFileManager.navigateToCode(project, l1, filePath)
+                    if(jumped){
+                        ActionManager.getInstance().getAction("Send to LLM").templatePresentation.isEnabled = true
 
+                    }
                     //invoke
 
                     val editor = getCurrentEditor(project)
@@ -249,7 +253,10 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 // Only enable the action when text is selected in the editor
                 val editor = getCurrentEditor(project)
                 val selectionModel = editor?.selectionModel
-                e.presentation.isEnabled = selectionModel?.hasSelection() == true
+                //val tableSelectionEnabled = table.selectedRow >= 0 && resolutionLabel.text.isNotBlank()
+                e.presentation.isEnabled = (selectionModel?.hasSelection() == true)
+
+
             }
 
             override fun actionPerformed(e: AnActionEvent) {
