@@ -105,6 +105,10 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             toolWindow?.show(null)
         }
 
+        val centerPanel = JPanel(FlowLayout(FlowLayout.CENTER))
+        centerPanel.add(sendToLLMButton)
+
+        bottomPanel.add(centerPanel, BorderLayout.CENTER)
 
         // info on the left
         val leftPanel = JPanel(GridBagLayout())
@@ -183,7 +187,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
                 }
                 else if (e.clickCount == 2){
-                    val jumped = satdFileManager.navigateToCode(project, line, path)
+                    val jumped = satdFileManager.navigateToCode(project, l1, filePath)
 
                     if (jumped){
                         sendToLLMButton.isEnabled = true
