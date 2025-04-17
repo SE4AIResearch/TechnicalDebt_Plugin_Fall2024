@@ -16,12 +16,9 @@ import technicaldebt_plugin_fall2024.toolWindow.Without.SATDDatabaseManager
 import technicaldebt_plugin_fall2024.toolWindow.Without.SATDFileManager
 import com.intellij.openapi.editor.Document
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionToolbar
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.ide.DataManager
+import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.ui.components.JBPanel
 
 import java.awt.*
@@ -69,20 +66,15 @@ private fun getLineTextRange(document: Document, editor: Editor): TextRange {
 class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
     private val satdFileManager = SATDFileManager()
     private val satdDatabaseManager = SATDDatabaseManager()
+    private var isJumpedToMethod = false
+
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val toolWindowPanel = JPanel(BorderLayout())
 //        val tabbedPane = JTabbedPane()
 
         val label = JBLabel("Retrieve the latest SATD data: ")
-        val button = JButton("Fetch SATD").apply {
-////            icon = ImageIcon("src/main/resources/assets/load.png")
-//            preferredSize = Dimension(140, 30)
-//            background = Color(0x2E8B57)
-//            foreground = JBColor.WHITE
-//            font = Font("Arial", Font.BOLD, 12)
-            toolTipText = "Load the SATD records into the table"
-        }
+
 
         val pathLabel = JLabel("Path to SATD: ")
         val linesLabel = JBLabel("Lines: [,]")
@@ -92,7 +84,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val bottomPanel = JPanel(BorderLayout())
 
 
-        val sendToLLMButton = JButton("Send to LLM").apply {
+        /*val sendToLLMButton = JButton("Send to LLM").apply {
             isEnabled = false
         }
 
@@ -117,7 +109,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         centerPanel.add(sendToLLMButton)
 
         bottomPanel.add(centerPanel, BorderLayout.CENTER)
-        //wadwa
+        //wadwa*/
+
+
         // info on the left
         val leftPanel = JPanel(GridBagLayout())
         val leftConstraints = GridBagConstraints().apply {
@@ -184,7 +178,10 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
 
                 if (e.clickCount == 1) {
-                    sendToLLMButton.isEnabled = false
+                    //sendToLLMButton.isEnabled = false
+
+                    //ActionManager.getInstance().getAction("Send to LLM").templatePresentation.isEnabled = false
+                    isJumpedToMethod = false
 
                     pathLabel.text = "Path to SATD: $filePath   "
                     linesLabel.text = "Lines: [$l1, $l2]"
@@ -198,7 +195,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                     val jumped = satdFileManager.navigateToCode(project, l1, filePath)
 
                     if (jumped){
-                        sendToLLMButton.isEnabled = true
+                        //sendToLLMButton.isEnabled = true
+                        //ActionManager.getInstance().getAction("Send to LLM").templatePresentation.isEnabled = true
+                        isJumpedToMethod = true
                     }
                     //invoke
 
@@ -279,30 +278,30 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 }
             })
 
-        add(object : AnAction("Send to LLM", "Send selected code to LLM for processing", AllIcons.RunConfigurations.Remote) {
-            override fun update(e: AnActionEvent) {
-                // Only enable the action when text is selected in the editor
-                val editor = getCurrentEditor(project)
-                val selectionModel = editor?.selectionModel
-                e.presentation.isEnabled = selectionModel?.hasSelection() == true
-            }
+            add(object : AnAction("Send to LLM", "Send selected code to LLM for processing", AllIcons.RunConfigurations.Remote) {
+                override fun update(e: AnActionEvent) {
+                    // Only enable the action when text is selected in the editor
+                    val editor = getCurrentEditor(project)
+                    val selectionModel = editor?.selectionModel
+                    e.presentation.isEnabled = isJumpedToMethod && selectionModel?.hasSelection() == true
+                }
 
-            override fun actionPerformed(e: AnActionEvent) {
-                val editor = getCurrentEditor(project)
-                val document = editor?.document ?: return
-                val selectionModel = editor.selectionModel
-                val selectedText = selectionModel.selectedText ?: return
-                val textRange = TextRange(selectionModel.selectionStart, selectionModel.selectionEnd)
+                override fun actionPerformed(e: AnActionEvent) {
+                    val editor = getCurrentEditor(project)
+                    val document = editor?.document ?: return
+                    val selectionModel = editor.selectionModel
+                    val selectedText = selectionModel.selectedText ?: return
+                    val textRange = TextRange(selectionModel.selectionStart, selectionModel.selectionEnd)
 
-                val satdType = resolutionLabel.text.removePrefix("Resolution:").trim()
+                    val satdType = resolutionLabel.text.removePrefix("Resolution:").trim()
 
-                LLMActivator.transform(project, selectedText, editor, textRange, satdType)
-                val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("LLM Output")
-                toolWindow?.show(null)
-            }
-        })
+                    LLMActivator.transform(project, selectedText, editor, textRange, satdType)
+                    val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("LLM Output")
+                    toolWindow?.show(null)
+                }
+            })
 
-    }
+        }
 
         val toolbar = ActionManager.getInstance().createActionToolbar("SATDToolbar", actionGroup, true)
         toolbar.targetComponent = toolWindowPanel
