@@ -20,6 +20,10 @@ import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.ui.components.JBPanel
+import javax.swing.JComponent
+import javax.swing.JTabbedPane
+
+
 
 import java.awt.*
 import java.awt.event.MouseAdapter
@@ -31,6 +35,7 @@ import java.nio.file.Paths
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableCellRenderer
+import javax.swing.table.DefaultTableCellRenderer
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.util.TextRange
@@ -43,6 +48,14 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
+import java.awt.BorderLayout
+import java.awt.Color
+import java.awt.Component
+import java.awt.Dimension
+import java.awt.Font
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import javax.swing.BorderFactory
 import technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow
 
 fun getCurrentEditor(project: Project): Editor? {
@@ -70,11 +83,20 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val toolWindowPanel = JPanel(BorderLayout())
+        val toolWindowPanel = JBPanel<JBPanel<*>>()
+        toolWindowPanel.layout = BorderLayout()
 //        val tabbedPane = JTabbedPane()
 
         val label = JBLabel("Retrieve the latest SATD data: ")
-
+        toolWindowPanel.add(label, BorderLayout.NORTH)
+        val button = JButton("Fetch SATD").apply {
+////            icon = ImageIcon("src/main/resources/assets/load.png")
+//            preferredSize = Dimension(140, 30)
+//            background = Color(0x2E8B57)
+//            foreground = JBColor.WHITE
+//            font = Font("Arial", Font.BOLD, 12)
+            toolTipText = "Load the SATD records into the table"
+        }
 
         val pathLabel = JLabel("Path to SATD: ")
         val linesLabel = JBLabel("Lines: [,]")
@@ -153,8 +175,20 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val table = JTable(tableModel)
         table.autoResizeMode = JTable.AUTO_RESIZE_OFF
         table.columnModel.getColumn(1).preferredWidth = 500
-        table.isEnabled = true
+        table.isEnabled = false
         table.columnModel.getColumn(1).cellRenderer = TextAreaRenderer()
+        table.setShowGrid(false)
+        table.intercellSpacing = Dimension(0, 0)
+
+        for (col in 0 until table.columnCount) {
+            if (col == 1) {
+                table.columnModel.getColumn(col).cellRenderer = ThickTextAreaRenderer()
+            } else {
+                table.columnModel.getColumn(col).cellRenderer = ThickBorderCellRenderer()
+            }
+        }
+
+        table.tableHeader.defaultRenderer = ThickHeaderRenderer()
 
         table.setCellSelectionEnabled(false)
         table.setColumnSelectionAllowed(false)
@@ -235,7 +269,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
         val scrollPane = JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED)
         scrollPane.preferredSize = Dimension(900, 250)
-        scrollPane.border = BorderFactory.createEmptyBorder(5, 10, 10, 10)
+        scrollPane.setBorder(
+            BorderFactory.createLineBorder(Color.BLACK, /*thickness=*/1)
+        );
         toolWindowPanel.add(scrollPane, BorderLayout.CENTER)
 
 
@@ -301,7 +337,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 }
             })
 
-        }
+    }
 
         val toolbar = ActionManager.getInstance().createActionToolbar("SATDToolbar", actionGroup, true)
         toolbar.targetComponent = toolWindowPanel
@@ -312,7 +348,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         toolWindow.contentManager.addContent(content)
     }
 
-    class TextAreaRenderer : JTextArea(), TableCellRenderer {
+    open class TextAreaRenderer : JTextArea(), TableCellRenderer {
         init {
             lineWrap = true
             wrapStyleWord = true
@@ -337,6 +373,58 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             background = if (isSelected) table.selectionBackground else table.background
             foreground = if (isSelected) table.selectionForeground else table.foreground
             return this
+        }
+    }
+    class ThickTextAreaRenderer : TextAreaRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable, value: Any?, isSelected: Boolean,
+            hasFocus: Boolean, row: Int, column: Int
+        ): Component {
+            val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JComponent
+
+            // Outer border is now 1px; inner padding remains.
+            val thinBorder = BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK)
+            val padding = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            comp.border = BorderFactory.createCompoundBorder(thinBorder, padding)
+            return comp
+        }
+    }
+
+    class ThickBorderCellRenderer : DefaultTableCellRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable, value: Any?,
+            isSelected: Boolean, hasFocus: Boolean,
+            row: Int, column: Int
+        ): Component {
+            val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JComponent
+
+            val thinBorder = BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK)
+            val padding = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            comp.border = BorderFactory.createCompoundBorder(thinBorder, padding)
+            return comp
+        }
+    }
+
+    class ThickHeaderRenderer : DefaultTableCellRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable,
+            value: Any?,
+            isSelected: Boolean,
+            hasFocus: Boolean,
+            row: Int,
+            column: Int
+        ): Component {
+            val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JComponent
+
+            comp.background = Color.DARK_GRAY
+            comp.foreground = Color.WHITE
+            font = font.deriveFont(Font.BOLD)
+
+            val thinBorder = BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK)
+            val padding = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            comp.border = BorderFactory.createCompoundBorder(thinBorder, padding)
+
+            return comp
         }
     }
 
