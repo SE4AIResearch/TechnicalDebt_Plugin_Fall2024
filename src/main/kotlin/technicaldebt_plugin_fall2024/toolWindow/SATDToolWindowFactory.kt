@@ -26,8 +26,6 @@ import javax.swing.JTabbedPane
 
 
 import java.awt.*
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -88,7 +86,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 //        val tabbedPane = JTabbedPane()
 
         val label = JBLabel("Retrieve the latest SATD data: ")
-        toolWindowPanel.add(label, BorderLayout.NORTH)
+//        toolWindowPanel.add(label, BorderLayout.NORTH)
         val button = JButton("Fetch SATD").apply {
 ////            icon = ImageIcon("src/main/resources/assets/load.png")
 //            preferredSize = Dimension(140, 30)
@@ -204,8 +202,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 var filePath: String? = null
                 var l1: Int? = null
                 var l2: Int
-
-                val satdInfo = satdDatabaseManager.getSATDTableInfo(project.name, fileId, label)
+                val satdInfo = satdDatabaseManager.getSATDTableInfo(project, fileId, refactoringLabel)
                 filePath = satdInfo.filePath!!
                 l1 = satdInfo.startLine!!
                 l2 = satdInfo.endLine!!
@@ -284,7 +281,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         try {
             Files.createDirectories(Paths.get(PathManager.getConfigPath() + "/databases"))
         } catch (e: IOException) {
-            label.text = "Error: " + e.message
+            Messages.showWarningDialog("Error: " + e.message, "")
         }
 
         val db = File(PathManager.getConfigPath() + "/databases", project.name + ".db")
@@ -303,14 +300,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val actionGroup = DefaultActionGroup().apply {
             add(object : AnAction("Fetch SATD", "Load the SATD records into the table", AllIcons.Actions.Refresh) {
                 override fun actionPerformed(e: AnActionEvent) {
-                    ProgressManager.getInstance().runProcessWithProgressSynchronously(
-                            {
-                                satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, project.name)
-                            },
-                            "Fetching SATD Data",
-                            false,
-                            project
-                    )
+                satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, project)
                 }
             })
 

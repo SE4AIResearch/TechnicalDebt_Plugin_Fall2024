@@ -1,7 +1,10 @@
 package technicaldebt_plugin_fall2024.toolWindow.Without
 
 import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
+import com.intellij.openapi.project.Project
 import javax.swing.JButton
 import com.intellij.ui.components.JBLabel
 import technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory.Companion.adjustColumnWidths
@@ -63,13 +66,14 @@ class SATDDatabaseManager {
 
 
     }
+
     fun loadDatabase(
         tableModel: DefaultTableModel,
         label: JBLabel,
         table: JTable,
         projectName: String,
 
-    ) {
+        ) {
 
         tableModel.rowCount = 0
         val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
@@ -107,12 +111,12 @@ class SATDDatabaseManager {
     }
 
     fun getSATDTableInfo(
-        projectName: String,
+        project: Project,
         focusedFileID: Int,
         refactoringsLabel: JBLabel
     ): SATDInfo {
         try {
-            val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
+            val databasePath = PathManager.getConfigPath() + "/databases/${project.name}.db"
             val url = "jdbc:sqlite:$databasePath"
 
             var satdInfo = SATDInfo(null, null, null, null, null)
@@ -123,11 +127,11 @@ class SATDDatabaseManager {
                     val getSATDInFileInfo = "SELECT start_line, end_line, f_path FROM SATDInFile WHERE f_id = ?"
                     val getSATDInfo = "SELECT resolution, second_commit FROM SATD WHERE second_file = ?"
 
-                    conn.prepareStatement(getSATDInFileInfo).use{ pstmt ->
+                    conn.prepareStatement(getSATDInFileInfo).use { pstmt ->
                         pstmt.setInt(1, focusedFileID)
                         val rs = pstmt.executeQuery()
 
-                        if(rs.next()) {
+                        if (rs.next()) {
                             satdInfo = satdInfo.copy(
                                 startLine = rs.getInt("start_line"),
                                 endLine = rs.getInt("end_line"),
@@ -173,20 +177,20 @@ class SATDDatabaseManager {
             refactoringsLabel.text = "Error fetching refactorings: ${e.message}"
         }
 
-        return SATDInfo(null, null, null, null,null)
+        return SATDInfo(null, null, null, null, null)
     }
 
     fun initializeAndConnectDatabase(
         tableModel: DefaultTableModel,
         label: JBLabel,
         table: JTable,
-        projectName: String,
-
+        project: Project
     ) {
+
 
         tableModel.rowCount = 0
         val sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql"
-        val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
+        val databasePath = PathManager.getConfigPath() + "/databases/${project.name}.db"
         val libPath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/"
 
         val inputStream: InputStream?
@@ -197,8 +201,8 @@ class SATDDatabaseManager {
             return
         }
 
-        val indicator = ProgressManager.getInstance().progressIndicator
-        indicator.isIndeterminate = true;
+//        val indicator = ProgressManager.getInstance().progressIndicator
+//        indicator.isIndeterminate = true;
 
         try {
             Class.forName("org.sqlite.JDBC")
@@ -223,9 +227,9 @@ class SATDDatabaseManager {
                         }
                     }
 
-                    indicator?.let {
-                        it.text = "Database initialization complete."
-                    }
+//                    indicator?.let {
+//                        it.text = "Database initialization complete."
+//                    }
 
                     try {
 
@@ -234,33 +238,55 @@ class SATDDatabaseManager {
                         //println("CSV path = $libPath/test_repo.csv")
                         //println("DB path = $databasePath")
 
-                        val processBuilder = ProcessBuilder(
-                            "java",
-                            "--add-opens",
-                            "java.base/java.lang=ALL-UNNAMED",
-                            "-jar",
-                            "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
-                            "-r",
-                            "$libPath/test_repo.csv",
-                            "-d",
-                            databasePath
-                        )
+//                        val processBuilder = ProcessBuilder(
+//                            "java",
+//                            "--add-opens",
+//                            "java.base/java.lang=ALL-UNNAMED",
+//                            "-jar",
+//                            "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
+//                            "-r",
+//                            "$libPath/test_repo.csv",
+//                            "-d",
+//                            databasePath
+//                        )
+//
+//                        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+//                        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
 
-                        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
+                        val task =
+                            object : Task.Backgroundable(project, "Running SATD Analysis") {
+                                override fun run(indicator: ProgressIndicator) {
+                                    try {
+                                        val processBuilder = ProcessBuilder(
+                                            "java",
+                                            "--add-opens",
+                                            "java.base/java.lang=ALL-UNNAMED",
+                                            "-jar",
+                                            "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
+                                            "-r", "$libPath/test_repo.csv",
+                                            "-d", databasePath
+                                        )
 
-                        val process = processBuilder.start()
-                        val exitCode = process.waitFor()
-                        println("Exit code: $exitCode")
+                                        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                                        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
+
+                                        val process = processBuilder.start()
+                                        val exitCode = process.waitFor()
+                                        println("SATD Analyzer exited with code: $exitCode")
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                }
+                            }.queue()
                     } catch (e: IOException) {
                         e.printStackTrace()
                     } catch (e: InterruptedException) {
                         e.printStackTrace()
                     }
 
-                    indicator?.let {
-                        it.text = "Database up to Date."
-                    }
+//                    indicator?.let {
+//                        it.text = "Database up to Date."
+//                    }
 
                     val fetchQuerySATDInFile = "SELECT * FROM SATDInFile"
                     var SATDInFileRS = stmt.executeQuery(fetchQuerySATDInFile)
@@ -271,12 +297,12 @@ class SATDDatabaseManager {
                         val containing_method = SATDInFileRS.getString("containing_method")
                         tableModel.addRow(arrayOf(f_id, f_comment, containing_class, containing_method))
                     }
-                    
+
                     adjustColumnWidths(table)
 
-                    indicator?.let {
-                        it.text = "Data fetching complete."
-                    }
+//                    indicator?.let {
+//                        it.text = "Data fetching complete."
+//                    }
                 }
             }
         } catch (e: Exception) {
@@ -285,5 +311,5 @@ class SATDDatabaseManager {
 
 
     }
-
 }
+
