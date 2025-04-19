@@ -287,11 +287,11 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val db = File(PathManager.getConfigPath() + "/databases", project.name + ".db")
         try {
             if (db.createNewFile()) {
-                satdDatabaseManager.initialize(label, project.name)
+                satdDatabaseManager.initialize(label, project)
             } else {
                 val message = "Loading existing SATD data for this  project. May not include most recent commits. Click \"Fetch SATD Data\" to update data"
                 Messages.showWarningDialog(message, "")
-                satdDatabaseManager.loadDatabase(tableModel, label, table, project.name)
+                satdDatabaseManager.loadDatabase(tableModel, label, table, project)
             }
         } catch (e: IOException) {
             label.text = "Error: " + e.message

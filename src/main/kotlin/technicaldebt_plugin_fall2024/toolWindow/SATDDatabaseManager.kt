@@ -14,6 +14,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.sql.DriverManager
 import javax.swing.JTable
+import javax.swing.SwingUtilities
 import javax.swing.table.DefaultTableModel
 
 class SATDDatabaseManager {
@@ -25,10 +26,10 @@ class SATDDatabaseManager {
         val refactoring: String?
     )
 
-    fun initialize(label: JBLabel, projectName: String) {
+    fun initialize(label: JBLabel, project: Project) {
 
         val sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql"
-        val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
+        val databasePath = PathManager.getConfigPath() + "/databases/${project.name}.db"
 
         val inputStream: InputStream?
         try {
@@ -71,12 +72,12 @@ class SATDDatabaseManager {
         tableModel: DefaultTableModel,
         label: JBLabel,
         table: JTable,
-        projectName: String,
+        project: Project,
 
         ) {
 
         tableModel.rowCount = 0
-        val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
+        val databasePath = PathManager.getConfigPath() + "/databases/${project.name}.db"
 
         try {
             Class.forName("org.sqlite.JDBC")
@@ -253,63 +254,80 @@ class SATDDatabaseManager {
 //                        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT)
 //                        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
 
-                        val task =
-                            object : Task.Backgroundable(project, "Running SATD Analysis") {
-                                override fun run(indicator: ProgressIndicator) {
-                                    try {
-                                        val processBuilder = ProcessBuilder(
-                                            "java",
-                                            "--add-opens",
-                                            "java.base/java.lang=ALL-UNNAMED",
-                                            "-jar",
-                                            "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
-                                            "-r", "$libPath/test_repo.csv",
-                                            "-d", databasePath
-                                        )
+                        val task = object : Task.Backgroundable(project, "Running SATD Analysis", true) {
+                            override fun run(indicator: ProgressIndicator) {
+                                try {
+                                    val processBuilder = ProcessBuilder(
+                                        "java",
+                                        "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+                                        "-jar", "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
+                                        "-r", "$libPath/test_repo.csv",
+                                        "-d", databasePath
+                                    )
 
-                                        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                                        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
+                                    processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                                    processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
 
-                                        val process = processBuilder.start()
-                                        val exitCode = process.waitFor()
-                                        println("SATD Analyzer exited with code: $exitCode")
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
+                                    val process = processBuilder.start()
+                                    val exitCode = process.waitFor()
+                                    println("SATD Analyzer exited with code: $exitCode")
+
+                                    if (exitCode == 0) {
+                                        val newRows = mutableListOf<Array<Any>>()
+
+                                        DriverManager.getConnection(url).use { conn ->
+                                            conn.createStatement().use { stmt ->
+                                                val rs = stmt.executeQuery("SELECT * FROM SATDInFile")
+                                                while (rs.next()) {
+                                                    val f_id = rs.getInt("f_id")
+                                                    val f_comment = rs.getString("f_comment")
+                                                    val containing_class = rs.getString("containing_class")
+                                                    val containing_method = rs.getString("containing_method")
+                                                    newRows.add(
+                                                        arrayOf(
+                                                            f_id,
+                                                            f_comment,
+                                                            containing_class,
+                                                            containing_method
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        // ✅ Now update the UI
+                                        SwingUtilities.invokeLater {
+                                            tableModel.rowCount = 0 // Clear existing rows
+                                            newRows.forEach { row ->
+                                                tableModel.addRow(row)
+                                            }
+                                            adjustColumnWidths(table)
+                                        }
+                                    } else {
+                                        println("SATD Analyzer failed with exit code $exitCode")
                                     }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
-                            }.queue()
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                    } catch (e: InterruptedException) {
+                            }
+                        }
+
+                        task.queue()
+
+                    }
+                    catch (e: IOException) {
                         e.printStackTrace()
                     }
-
-//                    indicator?.let {
-//                        it.text = "Database up to Date."
-//                    }
-
-                    val fetchQuerySATDInFile = "SELECT * FROM SATDInFile"
-                    var SATDInFileRS = stmt.executeQuery(fetchQuerySATDInFile)
-                    while (SATDInFileRS.next()) {
-                        val f_id = SATDInFileRS.getInt("f_id")
-                        val f_comment = SATDInFileRS.getString("f_comment")
-                        val containing_class = SATDInFileRS.getString("containing_class")
-                        val containing_method = SATDInFileRS.getString("containing_method")
-                        tableModel.addRow(arrayOf(f_id, f_comment, containing_class, containing_method))
+                    catch (e: InterruptedException) {
+                        e.printStackTrace()
                     }
-
-                    adjustColumnWidths(table)
-
-//                    indicator?.let {
-//                        it.text = "Data fetching complete."
-//                    }
                 }
             }
-        } catch (e: Exception) {
-            label.text = "Connection failed: " + e.message
         }
 
-
+        catch (e: Exception) {
+            label.text = "Connection failed: " + e.message
+        }
     }
 }
 
