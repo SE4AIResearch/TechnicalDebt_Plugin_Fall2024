@@ -28,7 +28,7 @@ class SATDDatabaseManager {
 
     fun initialize(label: JBLabel, project: Project) {
 
-        val sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql"
+        val sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/create_tables_including_refactorings.sql"
         val databasePath = PathManager.getConfigPath() + "/databases/${project.name}.db"
 
         val inputStream: InputStream?
@@ -72,8 +72,7 @@ class SATDDatabaseManager {
         tableModel: DefaultTableModel,
         label: JBLabel,
         table: JTable,
-        project: Project,
-
+        project : Project
         ) {
 
         tableModel.rowCount = 0
@@ -113,8 +112,7 @@ class SATDDatabaseManager {
 
     fun getSATDTableInfo(
         project: Project,
-        focusedFileID: Int,
-        refactoringsLabel: JBLabel
+        fileID: Int
     ): SATDInfo {
         try {
             val databasePath = PathManager.getConfigPath() + "/databases/${project.name}.db"
@@ -129,7 +127,7 @@ class SATDDatabaseManager {
                     val getSATDInfo = "SELECT resolution, second_commit FROM SATD WHERE second_file = ?"
 
                     conn.prepareStatement(getSATDInFileInfo).use { pstmt ->
-                        pstmt.setInt(1, focusedFileID)
+                        pstmt.setInt(1, fileID)
                         val rs = pstmt.executeQuery()
 
                         if (rs.next()) {
@@ -142,7 +140,7 @@ class SATDDatabaseManager {
                     }
 
                     conn.prepareStatement(getSATDInfo).use { pstmt ->
-                        pstmt.setInt(1, focusedFileID)
+                        pstmt.setInt(1, fileID)
                         val rs = pstmt.executeQuery()
 
                         if (rs.next()) {
@@ -175,10 +173,10 @@ class SATDDatabaseManager {
                 }
             }
         } catch (e: Exception) {
-            refactoringsLabel.text = "Error fetching refactorings: ${e.message}"
+//            refactoringsLabel.text = "Error fetching refactorings: ${e.message}"
+            error("Error fetching refactorings: ${e.message}")
         }
 
-        return SATDInfo(null, null, null, null, null)
     }
 
     fun initializeAndConnectDatabase(
@@ -295,7 +293,7 @@ class SATDDatabaseManager {
                                             }
                                         }
 
-                                        // ✅ Now update the UI
+
                                         SwingUtilities.invokeLater {
                                             tableModel.rowCount = 0 // Clear existing rows
                                             newRows.forEach { row ->
@@ -328,6 +326,8 @@ class SATDDatabaseManager {
         catch (e: Exception) {
             label.text = "Connection failed: " + e.message
         }
+
+
     }
 }
 
