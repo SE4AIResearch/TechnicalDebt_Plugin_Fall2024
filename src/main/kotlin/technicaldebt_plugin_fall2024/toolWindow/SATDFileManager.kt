@@ -11,7 +11,7 @@ import java.io.*
 import java.util.stream.Collectors
 
 class SATDFileManager {
-    fun navigateToCode(project: Project, lineNumber: Int, path: String): Boolean {
+    fun navigateToCode(project: Project, lineNumber: Int?, path: String): Boolean {
         val homePath = project.basePath
         val fullPath = "$homePath/$path"
         val file = LocalFileSystem.getInstance().findFileByPath(fullPath)
@@ -29,9 +29,11 @@ class SATDFileManager {
             return false
         }
         val caretModel = editor.caretModel
-        if (lineNumber > 0 && lineNumber <= editor.document.lineCount) {
-            caretModel.moveToLogicalPosition(LogicalPosition(lineNumber - 1, 0))
-            editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+        if (lineNumber != null) {
+            if (lineNumber > 0 && lineNumber <= editor.document.lineCount) {
+                caretModel.moveToLogicalPosition(LogicalPosition(lineNumber - 1, 0))
+                editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+            }
         }
         return true
 
