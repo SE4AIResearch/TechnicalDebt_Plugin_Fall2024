@@ -314,7 +314,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                     val selectionModel = editor.selectionModel
                     val selectedText = selectionModel.selectedText ?: return
                     val textRange = TextRange(selectionModel.selectionStart, selectionModel.selectionEnd)
-
+//w
                     val satdType = currResolution
 
                     if(satdType == null)
