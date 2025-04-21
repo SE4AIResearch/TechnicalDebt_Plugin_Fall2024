@@ -26,8 +26,6 @@ import javax.swing.JTabbedPane
 
 
 import java.awt.*
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
