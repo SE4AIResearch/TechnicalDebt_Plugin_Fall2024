@@ -197,12 +197,22 @@ class SATDDatabaseManager {
                                 val logDir = File(System.getProperty("user.home"), ".technical_debt/logs")
                                 if (!logDir.exists()) logDir.mkdirs()
 
-                                processBuilder.redirectOutput(File(System.getProperty("user.home"),".technical_debt/logs/satd_stdout.log"))
-                                processBuilder.redirectError(File(System.getProperty("user.home"),".technical_debt/logs/satd_stderr.log"))
+                                processBuilder.redirectOutput(
+                                    File(
+                                        System.getProperty("user.home"),
+                                        ".technical_debt/logs/satd_stdout.log"
+                                    )
+                                )
+                                processBuilder.redirectError(
+                                    File(
+                                        System.getProperty("user.home"),
+                                        ".technical_debt/logs/satd_stderr.log"
+                                    )
+                                )
 
 
                                 val process = processBuilder.start()
-
+                                // handle intellij shutdonw
                                 Runtime.getRuntime().addShutdownHook(Thread {
                                     if (process.isAlive) {
                                         println("IDE is shutting down, killing external process...")
@@ -213,7 +223,24 @@ class SATDDatabaseManager {
                                             process.destroyForcibly()
                                         }
                                     }
+
                                 })
+
+                                // handle process cancel
+                                while (process?.isAlive == true) {
+                                    if (indicator.isCanceled) {
+                                        println("Task was canceled, destroying process...")
+                                        process.destroy()
+                                        process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)
+                                        if (process.isAlive) {
+                                            println("Process still alive, killing forcibly...")
+                                            process.destroyForcibly()
+                                        }
+                                        return
+                                    }
+                                    Thread.sleep(200)
+                                }
+
 
                                 val exitCode = process.waitFor()
                                 println("SATD Analyzer exited with code: $exitCode")
