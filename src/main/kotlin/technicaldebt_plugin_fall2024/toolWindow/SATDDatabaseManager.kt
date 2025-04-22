@@ -202,6 +202,19 @@ class SATDDatabaseManager {
 
 
                                 val process = processBuilder.start()
+
+                                Runtime.getRuntime().addShutdownHook(Thread {
+                                    if (process.isAlive) {
+                                        println("IDE is shutting down, killing external process...")
+                                        process.destroy()
+                                        process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)
+                                        if (process.isAlive) {
+                                            println("Process still alive, killing forcibly...")
+                                            process.destroyForcibly()
+                                        }
+                                    }
+                                })
+
                                 val exitCode = process.waitFor()
                                 println("SATD Analyzer exited with code: $exitCode")
 
