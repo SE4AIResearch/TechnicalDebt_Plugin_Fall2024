@@ -19,7 +19,10 @@ import com.intellij.openapi.actionSystem.*
 import com.intellij.ui.components.JBPanel
 import javax.swing.JComponent
 
-
+import javax.swing.RowSorter
+import javax.swing.SortOrder
+import javax.swing.table.JTableHeader
+import javax.swing.table.TableRowSorter
 import java.awt.*
 import java.io.File
 import java.io.IOException
@@ -73,53 +76,17 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val toolWindowPanel = JBPanel<JBPanel<*>>()
         toolWindowPanel.layout = BorderLayout()
-//        val tabbedPane = JTabbedPane()
+
 
         val label = JBLabel("Retrieve the latest SATD data: ")
-//        toolWindowPanel.add(label, BorderLayout.NORTH)
-        val button = JButton("Fetch SATD").apply {
-////            icon = ImageIcon("src/main/resources/assets/load.png")
-//            preferredSize = Dimension(140, 30)
-//            background = Color(0x2E8B57)
-//            foreground = JBColor.WHITE
-//            font = Font("Arial", Font.BOLD, 12)
-            toolTipText = "Load the SATD records into the table"
-        }
+
 
         val pathLabel = JLabel("Path to SATD: ")
         val linesLabel = JBLabel("Lines: [,]")
-//        val resolutionLabel = JBLabel("Resolution: []")
-//        val refactoringLabel = JBLabel("Refactoring: []")
+
 
         val bottomPanel = JPanel(BorderLayout())
 
-
-        /*val sendToLLMButton = JButton("Send to LLM").apply {
-            isEnabled = false
-        }
-
-        sendToLLMButton.addActionListener {
-            val editor = getCurrentEditor(project)
-            val document = editor?.document ?: return@addActionListener
-            val selectionModel = editor.selectionModel
-            val selectedText = selectionModel.selectedText ?: return@addActionListener
-            val textRange = TextRange(selectionModel.selectionStart, selectionModel.selectionEnd)
-
-
-
-            val satdType = resolutionLabel.text.removePrefix("Resolution:").trim()
-
-
-            LLMActivator.transform(project, selectedText, editor, textRange, satdType)
-            val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("LLM Output")
-            toolWindow?.show(null)
-        }
-
-        val centerPanel = JPanel(FlowLayout(FlowLayout.CENTER))
-        centerPanel.add(sendToLLMButton)
-
-        bottomPanel.add(centerPanel, BorderLayout.CENTER)
-        //wadwa*/
 
 
         // info on the left
@@ -138,11 +105,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             anchor = GridBagConstraints.EAST
             insets = JBUI.insets(5, 10)
         }
-//      rightPanel.add(resolutionLabel, rightConstraints)
-//        rightConstraints.gridx = 1
-//        rightPanel.add(refactoringLabel, rightConstraints)
-//        rightConstraints.gridx = 2
-
 
 
         // Add left and right subpanels to bottom panel
@@ -170,6 +132,15 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         table.columnModel.getColumn(1).cellRenderer = TextAreaRenderer()
         table.setShowGrid(false)
         table.intercellSpacing = Dimension(0, 0)
+
+        val sorter = TableRowSorter(tableModel)
+        table.rowSorter = sorter
+
+        sorter.setComparator(0, Comparator<Int> { o1, o2 -> o1.compareTo(o2) })
+        
+        for (i in 0 until table.columnCount) {
+            sorter.setSortable(i, true)
+        }
 
         for (col in 0 until table.columnCount) {
             if (col == 1) {
@@ -205,7 +176,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
 
                 if (e.clickCount == 1) {
-                    //sendToLLMButton.isEnabled = false
 
                     //ActionManager.getInstance().getAction("Send to LLM").templatePresentation.isEnabled = false
                     isJumpedToMethod = false
@@ -222,7 +192,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                     val jumped = satdFileManager.navigateToCode(project, l1, filePath)
 
                     if (jumped){
-                        //sendToLLMButton.isEnabled = true
                         //ActionManager.getInstance().getAction("Send to LLM").templatePresentation.isEnabled = true
                         isJumpedToMethod = true
                     }
@@ -294,6 +263,27 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         }
 
         val actionGroup = DefaultActionGroup().apply {
+            add(object : AnAction("Reverse Order", "Reverse the current table order", AllIcons.RunConfigurations.SortbyDuration) {
+                override fun actionPerformed(e: AnActionEvent) {
+                    // Get current sort keys
+                    val currentKeys = table.rowSorter?.sortKeys
+
+                    if (currentKeys.isNullOrEmpty()) {
+                        // If no sorting is applied, sort by the first column in descending order
+                        sorter.setSortKeys(listOf(RowSorter.SortKey(0, SortOrder.DESCENDING)))
+                    } else {
+                        // Toggle the sort order of the current sort column
+                        val currentKey = currentKeys[0]
+                        val newOrder = if (currentKey.sortOrder == SortOrder.ASCENDING) {
+                            SortOrder.DESCENDING
+                        } else {
+                            SortOrder.ASCENDING
+                        }
+                        sorter.setSortKeys(listOf(RowSorter.SortKey(currentKey.column, newOrder)))
+                    }
+                }
+            })
+
             add(object : AnAction("Fetch SATD", "Load the SATD records into the table", AllIcons.Actions.Refresh) {
                 override fun actionPerformed(e: AnActionEvent) {
                 satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, project)
