@@ -11,7 +11,7 @@ IntelliJ-based IDEs.
 
 # OpenAI
 
-- Sign up for OpenAI at https://beta.openai.com/signup
+- Sign up for OpenAI at https://auth.openai.com/create-account
 - Get your OpenAI API key
 - Go to Settings | Tools | Large Language Models and enter your API key in the "OpenAI Key" field. If you are a member
   of only one organization, leave the "OpenAI Organization" field empty
