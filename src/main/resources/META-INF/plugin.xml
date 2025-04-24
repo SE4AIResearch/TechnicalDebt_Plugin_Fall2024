@@ -34,6 +34,14 @@
                 id="ml.llm.LLMConfigurable"
                 bundle="messages.LLMBundle"
                 key="settings.configurable.display.name"/>
+
+        <applicationConfigurable
+                groupId="tools"
+                instance="technicaldebt_plugin_fall2024.settings.GitHubConfigurable"
+                id="ml.github.credentials"
+                displayName="GitHub Credentials"
+        />
+
         <applicationConfigurable
                 groupId="ml.llm.LLMConfigurable"
                 instance="com.technicaldebt_plugin_fall2024.settings.openai.AdvancedSettingsConfigurable"

@@ -5,15 +5,19 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
+import com.technicaldebt_plugin_fall2024.models.AuthorizationException
+import com.technicaldebt_plugin_fall2024.models.CredentialsHolder
 import technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory.Companion.adjustColumnWidths
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.InputStream
 import java.sql.DriverManager
+import java.util.concurrent.TimeUnit
 import javax.swing.JTable
 import javax.swing.SwingUtilities
 import javax.swing.table.DefaultTableModel
+import kotlin.text.ifEmpty
 
 class SATDDatabaseManager {
     data class SATDInfo(
@@ -60,6 +64,7 @@ class SATDDatabaseManager {
             label.text = "Error: ${e.message}"
         }
     }
+
 
     fun loadDatabase(
         tableModel: DefaultTableModel,
@@ -186,22 +191,80 @@ class SATDDatabaseManager {
                     val task = object : Task.Backgroundable(project, "Running SATD Analysis", true) {
                         override fun run(indicator: ProgressIndicator) {
                             try {
+                                // if the settings menu is empty then prompt for credentials
+                                val username = GitCredentialsHolder.getInstance().getUsername(
+                                    key = "GITHUB_USERNAME"
+                                )?.ifEmpty { null }
+                                    ?: throw AuthorizationException("Github username is not provided.")
+
+                                val pat = GitCredentialsHolder.getInstance().getPassword(
+                                    key = "GITHUB_PAT"
+                                )?.ifEmpty { null }
+                                    ?: throw AuthorizationException("Github PAT is not provided.")
+
+                                //otherwise try to verify and display Authentication Error if fails
+                                val credentialsHolder = GitCredentialsHolder.getInstance()
+                                val isAuthenticated = credentialsHolder.verifyGitHubAuthentication(username, pat)
+                                println("Authenticated: $isAuthenticated")
+
                                 val processBuilder = ProcessBuilder(
                                     "java",
                                     "--add-opens", "java.base/java.lang=ALL-UNNAMED",
                                     "-jar", "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
                                     "-r", "$libPath/test_repo.csv",
-                                    "-d", databasePath
+                                    "-d", databasePath,
+                                    "-u", username,
+                                    "-p", pat
                                 )
 
                                 val logDir = File(System.getProperty("user.home"), ".technical_debt/logs")
                                 if (!logDir.exists()) logDir.mkdirs()
 
-                                processBuilder.redirectOutput(File(System.getProperty("user.home"),".technical_debt/logs/satd_stdout.log"))
-                                processBuilder.redirectError(File(System.getProperty("user.home"),".technical_debt/logs/satd_stderr.log"))
+                                processBuilder.redirectOutput(
+                                    File(
+                                        System.getProperty("user.home"),
+                                        ".technical_debt/logs/satd_stdout.log"
+                                    )
+                                )
+                                processBuilder.redirectError(
+                                    File(
+                                        System.getProperty("user.home"),
+                                        ".technical_debt/logs/satd_stderr.log"
+                                    )
+                                )
 
 
                                 val process = processBuilder.start()
+                                // handle intellij shutdonw
+                                Runtime.getRuntime().addShutdownHook(Thread {
+                                    if (process.isAlive) {
+                                        println("IDE is shutting down, killing external process...")
+                                        process.destroy()
+                                        process.waitFor(5, TimeUnit.SECONDS)
+                                        if (process.isAlive) {
+                                            println("Process still alive, killing forcibly...")
+                                            process.destroyForcibly()
+                                        }
+                                    }
+
+                                })
+
+                                // handle process cancel
+                                while (process?.isAlive == true) {
+                                    if (indicator.isCanceled) {
+                                        println("Task was canceled, destroying process...")
+                                        process.destroy()
+                                        process.waitFor(5, TimeUnit.SECONDS)
+                                        if (process.isAlive) {
+                                            println("Process still alive, killing forcibly...")
+                                            process.destroyForcibly()
+                                        }
+                                        return
+                                    }
+                                    Thread.sleep(200)
+                                }
+
+
                                 val exitCode = process.waitFor()
                                 println("SATD Analyzer exited with code: $exitCode")
 
