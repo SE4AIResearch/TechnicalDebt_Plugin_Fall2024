@@ -230,6 +230,22 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
                     val editor = getCurrentEditor(project)
 
+                    val element = editor?.let { PsiUtilBase.getElementAtCaret(it) }
+                    val method = element?.let { PsiTreeUtil.getParentOfType(it, PsiNameIdentifierOwner::class.java) }
+                    val actualMethodName = method?.name
+                    println(method?.name)
+                    var expectedMethodName = table.getValueAt(row, 3) as String
+                    expectedMethodName = expectedMethodName.substringBefore("(").trim()
+
+                    if (actualMethodName != null && actualMethodName != expectedMethodName) {
+                        Messages.showErrorDialog(
+                                project,
+                                "The SATD method name \"$expectedMethodName\" doesn't match the current method name \"$actualMethodName\". The database entry might be outdated.",
+                                "Method Mismatch Detected"
+                        )
+                    }
+
+
                     val document = editor?.document
                     val selectionModel = editor?.selectionModel
                     val selectedText = selectionModel?.selectedText

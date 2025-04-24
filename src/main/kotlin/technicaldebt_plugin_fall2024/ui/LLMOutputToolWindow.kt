@@ -437,7 +437,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                             }
                         }
                     }
-                    val buttonPanel = JPanel(FlowLayout(FlowLayout.RIGHT)).apply {
+                    val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         border = BorderFactory.createEmptyBorder(5, 5, 5, 10)
                         add(runButton)
                     }
@@ -490,7 +490,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                             }
                         }
                     }
-                    val buttonPanel = JPanel(FlowLayout(FlowLayout.RIGHT)).apply {
+                    val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                         border = BorderFactory.createEmptyBorder(5, 5, 5, 10)
                         add(runButton)
                     }
@@ -522,7 +522,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                 }
             }
 
-            val rejectButton = JButton("Reject").apply {
+            /*val rejectButton = JButton("Reject").apply {
                 addActionListener {
                     editorField1?.text = "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
                     editorField2?.text =  "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
@@ -530,7 +530,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                     llmRequested = false
                     toolWindow.hide(null)
                 }
-            }
+            }*/
 
             val separatorPanel = JPanel(BorderLayout()).apply {
                 border = BorderFactory.createEmptyBorder(10, 0, 10, 0)  // Add padding here
@@ -539,7 +539,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
 
             val bottomPanel = JPanel(BorderLayout()).apply {
 
-                add(rejectButton, BorderLayout.CENTER)
+                //add(rejectButton, BorderLayout.CENTER)
                 add(separatorPanel, BorderLayout.NORTH)
                 add(applyButton, BorderLayout.SOUTH)
 
