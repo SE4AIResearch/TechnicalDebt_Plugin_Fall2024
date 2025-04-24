@@ -220,8 +220,6 @@ class SATDDatabaseManager {
 
                                 val processBuilder = ProcessBuilder(
                                     "java",
-                                    "--enable-native-access=ALL-UNNAMED",
-                                    "--add-opens", "java.base/java.lang=ALL-UNNAMED",
                                     "-jar", "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
                                     "-r", "$libPath/test_repo.csv",
                                     "-d", databasePath,
