@@ -18,7 +18,7 @@ IntelliJ-based IDEs.
 
 # Gemini
 - Sign up for OpenAI at https://aistudio.google.com/apikey
-- Get your Gemini API key
+- Get your Gemini API key (Video Tutorial https://www.youtube.com/watch?v=T1BTyo1A4Ww)
 - Go to Settings | Tools | Large Language Models and enter your API key in the "Gemini Key" field.
 
 # Ollama
