@@ -1,6 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-package technicaldebt_plugin_fall2024.models
+package technicaldebt_plugin_fall2024
 
 import LLMBundle
 import com.technicaldebt_plugin_fall2024.models.gemini.GeminiChatMessage
@@ -123,9 +123,6 @@ fun sendChatRequest(
 
 private fun sendRequest(project: Project, request: LLMBaseRequest<*>): LLMBaseResponse? {
     val settings = LLMSettingsManager.getInstance()
-
-
-
 
     try {
         return request.sendSync()

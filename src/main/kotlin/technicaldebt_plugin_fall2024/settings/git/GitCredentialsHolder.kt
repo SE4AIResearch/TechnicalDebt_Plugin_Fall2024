@@ -8,8 +8,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Base64
 
-val username = "GITHUB_USERNAME"
-val pat = "GITHUB_PAT"
+const val GITHUB_CREDENTIALS_KEY = "GITHUB_CREDENTIALS"
 
 @Service(Service.Level.APP)
 class GitCredentialsHolder {
@@ -17,21 +16,21 @@ class GitCredentialsHolder {
         fun getInstance(): GitCredentialsHolder = service<GitCredentialsHolder>()
     }
 
-    fun getUsername(key: String): String? {
-        val attributes = createCredentialAttributes(username)
+    fun getUsername(): String? {
+        val attributes = createCredentialAttributes(GITHUB_CREDENTIALS_KEY)
         val credentials = PasswordSafe.instance.get(attributes)
-        return credentials?.userName ?: System.getenv(username)
+        return credentials?.userName
     }
 
-    fun getPassword(key: String): String? {
-        val attributes = createCredentialAttributes(pat)
+    fun getPassword(): String? {
+        val attributes = createCredentialAttributes(GITHUB_CREDENTIALS_KEY)
         val credentials = PasswordSafe.instance.get(attributes)
-        return credentials?.getPasswordAsString() ?: System.getenv(pat)
+        return credentials?.getPasswordAsString()
     }
 
-    private fun setCredentials(key: String, password: String) {
+    fun setCredentials(key: String, username: String, pat: String) {
         val attributes = createCredentialAttributes(key)
-        val credentials = Credentials("default", password)
+        val credentials = Credentials(username, pat)
         PasswordSafe.instance.set(attributes, credentials)
     }
 
@@ -39,19 +38,13 @@ class GitCredentialsHolder {
         return CredentialAttributes(generateServiceName("Git", key))
     }
 
-    /**
-     * Verifies that the stored credentials (Personal Access Token) authenticate successfully.
-     * @param username GitHub username
-     * @param key The key for retrieving the token from PasswordSafe
-     * @return true if authentication succeeds, false otherwise
-     */
-    fun verifyGitHubAuthentication(username: String, key: String): Boolean {
-        val user = getUsername(key) ?: return false
-        val pat = getPassword(key) ?: return false
-        if (user != username) return false
+    fun verifyGitHubAuthentication(): Boolean {
+        val username = getUsername() ?: return false
+        val pat = getPassword() ?: return false
+
         val auth = "$username:$pat"
         val encodedAuth = Base64.getEncoder().encodeToString(auth.toByteArray())
-        val url = URL("https://api.github.com/user")  // This requires authentication and returns 200 if valid
+        val url = URL("https://api.github.com/user")
 
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "GET"

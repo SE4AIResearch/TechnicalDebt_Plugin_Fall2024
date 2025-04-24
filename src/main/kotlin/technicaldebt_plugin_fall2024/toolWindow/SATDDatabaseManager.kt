@@ -5,8 +5,9 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
-import com.technicaldebt_plugin_fall2024.models.AuthorizationException
+import technicaldebt_plugin_fall2024.AuthorizationException
 import com.technicaldebt_plugin_fall2024.models.CredentialsHolder
+import com.technicaldebt_plugin_fall2024.showUnauthorizedGitNotification
 import technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory.Companion.adjustColumnWidths
 import java.io.File
 import java.io.FileInputStream
@@ -191,24 +192,35 @@ class SATDDatabaseManager {
                     val task = object : Task.Backgroundable(project, "Running SATD Analysis", true) {
                         override fun run(indicator: ProgressIndicator) {
                             try {
-                                // if the settings menu is empty then prompt for credentials
-                                val username = GitCredentialsHolder.getInstance().getUsername(
-                                    key = "GITHUB_USERNAME"
-                                )?.ifEmpty { null }
-                                    ?: throw AuthorizationException("Github username is not provided.")
+                                val username = GitCredentialsHolder.getInstance().getUsername()?.ifEmpty { null }
 
-                                val pat = GitCredentialsHolder.getInstance().getPassword(
-                                    key = "GITHUB_PAT"
-                                )?.ifEmpty { null }
-                                    ?: throw AuthorizationException("Github PAT is not provided.")
+                                if (username == null) {
+                                    showUnauthorizedGitNotification(project, "Username")
+                                    throw AuthorizationException("GitHub Username is not provided. Please provide it in the settings menu under 'Technical Debt' section.")
+                                }
+
+                                val pat = GitCredentialsHolder.getInstance().getPassword()?.ifEmpty { null }
+
+                                if (pat == null) {
+                                    showUnauthorizedGitNotification(project, "Personal Access Token (PAT)")
+                                    throw AuthorizationException("GitHub Personal Access Token (PAT) is not provided. Please provide it in the settings menu under 'Technical Debt' section.")
+                                }
+
 
                                 //otherwise try to verify and display Authentication Error if fails
                                 val credentialsHolder = GitCredentialsHolder.getInstance()
-                                val isAuthenticated = credentialsHolder.verifyGitHubAuthentication(username, pat)
-                                println("Authenticated: $isAuthenticated")
+                                val isAuthenticated = credentialsHolder.verifyGitHubAuthentication()
+
+                                if (!isAuthenticated) {
+                                    showUnauthorizedGitNotification(project, "Username or Personal Access Token (PAT)")
+                                    throw AuthorizationException("GitHub Authentication Error. Please check your credentials and try again.")
+                                }
+
+
 
                                 val processBuilder = ProcessBuilder(
                                     "java",
+                                    "--enable-native-access=ALL-UNNAMED",
                                     "--add-opens", "java.base/java.lang=ALL-UNNAMED",
                                     "-jar", "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
                                     "-r", "$libPath/test_repo.csv",
@@ -332,3 +344,5 @@ class SATDDatabaseManager {
         }
     }
 }
+
+

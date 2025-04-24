@@ -1,12 +1,12 @@
-package technicaldebt_plugin_fall2024.settings
+package technicaldebt_plugin_fall2024.settings.git
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.ui.dsl.builder.*
-import com.technicaldebt_plugin_fall2024.settings.GitHubSettingsManager
+import com.intellij.ui.dsl.builder.bindText
+import com.intellij.ui.dsl.builder.panel
 import javax.swing.JTextArea
 
 class GitHubConfigurable : BoundConfigurable("SATD Tool GitHub Credentials") {
@@ -16,6 +16,10 @@ class GitHubConfigurable : BoundConfigurable("SATD Tool GitHub Credentials") {
         isEditable = false
         lineWrap = true
         wrapStyleWord = true
+    }
+    override fun apply() {
+        super.apply()
+        settings.applyCredentials()    // Pushes saved values into PasswordSafe
     }
 
     override fun createPanel(): DialogPanel {

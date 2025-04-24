@@ -46,6 +46,6 @@
                      description="If enabled, emulates requests instead of using OpenAI API. Used for debug purposes."
                      key="llm.for.code.enable.mock.requests"/>
 
-        <notificationGroup id="AI notification group" displayType="STICKY_BALLOON" bundle="messages.LLMBundle" key="notification.group.name"/>
+        <notificationGroup id="Technical Debt group" displayType="STICKY_BALLOON" bundle="messages.LLMBundle" key="notification.group.name"/>
     </extensions>
 </idea-plugin>
