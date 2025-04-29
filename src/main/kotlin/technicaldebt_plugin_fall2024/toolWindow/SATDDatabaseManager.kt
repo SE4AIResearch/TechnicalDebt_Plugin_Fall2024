@@ -14,8 +14,16 @@ import javax.swing.JTable
 import javax.swing.table.DefaultTableModel
 
 class SATDDatabaseManager {
-    fun initialize(label: JBLabel, projectName: String, button: JButton) {
-        button.isEnabled = false
+    data class SATDInfo(
+        val resolution: String?,
+        val startLine: Int?,
+        val endLine: Int?,
+        val filePath: String?,
+        val refactoring: String?
+    )
+
+    fun initialize(label: JBLabel, projectName: String) {
+
         val sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql"
         val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
 
@@ -53,16 +61,16 @@ class SATDDatabaseManager {
             label.text = "Error: " + e.message
         }
 
-        button.isEnabled = true
+
     }
     fun loadDatabase(
         tableModel: DefaultTableModel,
         label: JBLabel,
         table: JTable,
         projectName: String,
-        button: JButton
+
     ) {
-        button.isEnabled = false
+
         tableModel.rowCount = 0
         val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
 
@@ -84,12 +92,9 @@ class SATDDatabaseManager {
                     while (rs.next()) {
                         val f_id = rs.getInt("f_id")
                         val f_comment = rs.getString("f_comment")
-                        val f_path = rs.getString("f_path")
-                        val start_line = rs.getInt("start_line")
-                        val end_line = rs.getInt("end_line")
                         val containing_class = rs.getString("containing_class")
                         val containing_method = rs.getString("containing_method")
-                        tableModel.addRow(arrayOf(f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method))
+                        tableModel.addRow(arrayOf(f_id, f_comment, containing_class, containing_method))
                     }
 
                     adjustColumnWidths(table)
@@ -99,23 +104,39 @@ class SATDDatabaseManager {
             label.text = "Error: " + e.message
         }
 
-        button.isEnabled = true
     }
 
-    fun getResolutionAndRefactorings(
+    fun getSATDTableInfo(
         projectName: String,
         focusedFileID: Int,
         refactoringsLabel: JBLabel
-    ): Pair<String, String> {
+    ): SATDInfo {
         try {
             val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
             val url = "jdbc:sqlite:$databasePath"
 
+            var satdInfo = SATDInfo(null, null, null, null, null)
+
             DriverManager.getConnection(url).use { conn ->
                 conn.createStatement().use { stmt ->
                     // Step 1: Get resolution and second commit from SATD
-                    val getResolutionQuery = "SELECT resolution, second_commit FROM SATD WHERE second_file = ?"
-                    conn.prepareStatement(getResolutionQuery).use { pstmt ->
+                    val getSATDInFileInfo = "SELECT start_line, end_line, f_path FROM SATDInFile WHERE f_id = ?"
+                    val getSATDInfo = "SELECT resolution, second_commit FROM SATD WHERE second_file = ?"
+
+                    conn.prepareStatement(getSATDInFileInfo).use{ pstmt ->
+                        pstmt.setInt(1, focusedFileID)
+                        val rs = pstmt.executeQuery()
+
+                        if(rs.next()) {
+                            satdInfo = satdInfo.copy(
+                                startLine = rs.getInt("start_line"),
+                                endLine = rs.getInt("end_line"),
+                                filePath = rs.getString("f_path")
+                            )
+                        }
+                    }
+
+                    conn.prepareStatement(getSATDInfo).use { pstmt ->
                         pstmt.setInt(1, focusedFileID)
                         val rs = pstmt.executeQuery()
 
@@ -131,22 +152,28 @@ class SATDDatabaseManager {
 
                                 val refactoring =
                                     if (refRs.next()) {
-                                    refRs.getString("type")
-                                } else {
-                                    "N/A"
-                                }
+                                        refRs.getString("type")
+                                    } else {
+                                        "N/A"
+                                    }
 
-                                return Pair(resolution, refactoring)
+                                satdInfo = satdInfo.copy(
+                                    resolution = resolution,
+                                    refactoring = refactoring,
+                                )
                             }
                         }
                     }
+
+                    return satdInfo
+
                 }
             }
         } catch (e: Exception) {
             refactoringsLabel.text = "Error fetching refactorings: ${e.message}"
         }
 
-        return Pair("N/A", "N/A")
+        return SATDInfo(null, null, null, null,null)
     }
 
     fun initializeAndConnectDatabase(
@@ -154,9 +181,9 @@ class SATDDatabaseManager {
         label: JBLabel,
         table: JTable,
         projectName: String,
-        button: JButton
+
     ) {
-        button.isEnabled = false
+
         tableModel.rowCount = 0
         val sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql"
         val databasePath = PathManager.getConfigPath() + "/databases/$projectName.db"
@@ -240,12 +267,9 @@ class SATDDatabaseManager {
                     while (SATDInFileRS.next()) {
                         val f_id = SATDInFileRS.getInt("f_id")
                         val f_comment = SATDInFileRS.getString("f_comment")
-                        val f_path = SATDInFileRS.getString("f_path")
-                        val start_line = SATDInFileRS.getInt("start_line")
-                        val end_line = SATDInFileRS.getInt("end_line")
                         val containing_class = SATDInFileRS.getString("containing_class")
                         val containing_method = SATDInFileRS.getString("containing_method")
-                        tableModel.addRow(arrayOf(f_id, f_comment, f_path, start_line, end_line, containing_class, containing_method))
+                        tableModel.addRow(arrayOf(f_id, f_comment, containing_class, containing_method))
                     }
                     
                     adjustColumnWidths(table)
@@ -259,7 +283,7 @@ class SATDDatabaseManager {
             label.text = "Connection failed: " + e.message
         }
 
-        button.isEnabled = true
+
     }
 
 }

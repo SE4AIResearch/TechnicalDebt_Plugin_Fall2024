@@ -1,0 +1,4 @@
+> Task :clean
+> Task :checkKotlinGradlePluginConfigurationErrors
+> Task :compileKotlin FAILED
+3 actionable tasks: 3 executed

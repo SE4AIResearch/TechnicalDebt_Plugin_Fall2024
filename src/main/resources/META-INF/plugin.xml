@@ -19,7 +19,10 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow factoryClass="technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory" id="SATDToolWindow" anchor="bottom"/>
-        <annotator language="kotlin" implementationClass="com.github.SE4AIResearch.technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
+        <annotator language="kotlin" implementationClass="technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
+        <annotator language="JAVA" implementationClass="technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
+        <annotator language="python" implementationClass="technicaldebt_plugin_fall2024.listeners.MyHighlightTool"/>
+
         <dynamicPluginListener implementationClass="technicaldebt_plugin_fall2024.listeners.PluginReloader"/>
 
 
