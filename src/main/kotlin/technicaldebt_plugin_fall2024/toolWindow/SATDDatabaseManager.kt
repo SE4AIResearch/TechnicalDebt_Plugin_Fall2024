@@ -88,13 +88,42 @@ class SATDDatabaseManager {
         try {
             DriverManager.getConnection(url).use { conn ->
                 conn.createStatement().use { stmt ->
-                    val rs = stmt.executeQuery("SELECT * FROM SATDInFile")
+                    val rs = stmt.executeQuery("SELECT SATD.satd_id, " +
+                            "Projects.p_name AS project_name, " +
+                            "SATD.satd_instance_id, " +
+                            "SATD.resolution, " +
+                            "SecondCommit.commit_hash AS resolution_commit, " +
+                            "FirstCommit.author_name, " +
+                            "FirstFile.f_path AS v1_path, " +
+                            "FirstFile.containing_class AS v1_class, " +
+                            "FirstFile.containing_method AS v1_method, " +
+                            "FirstFile.f_comment AS v1_comment, " +
+                            "SecondCommit.commit_hash AS v2_commit, " +
+                            "SecondCommit.commit_date AS v2_commit_date, " +
+                            "SecondCommit.author_date AS v2_author_date, " +
+                            "SecondFile.f_path AS v2_path, " +
+                            "SecondFile.containing_class AS v2_class, " +
+                            "SecondFile.containing_method AS v2_method, " +
+                            "SecondFile.method_declaration AS method_declaration, " +
+                            "SecondFile.method_body AS method_body, " +
+                            "SecondFile.f_comment AS v2_comment, " +
+                            "COALESCE(rmv.type, 'N/A') AS refactoring " +
+                            "FROM SATD " +
+                            "INNER JOIN SATDInFile AS FirstFile ON SATD.first_file = FirstFile.f_id " +
+                            "INNER JOIN SATDInFile AS SecondFile ON SATD.second_file = SecondFile.f_id " +
+                            "INNER JOIN Commits AS FirstCommit ON SATD.first_commit = FirstCommit.commit_hash " +
+                            "INNER JOIN Commits AS SecondCommit ON SATD.second_commit = SecondCommit.commit_hash " +
+                            "INNER JOIN Projects ON SATD.p_id = Projects.p_id " +
+                            "LEFT JOIN RefactoringsRmv rmv ON resolution_commit = rmv.commit_hash" +
+                            "ORDER BY satd_id DESC;")
                     while (rs.next()) {
-                        val f_id = rs.getInt("f_id")
-                        val f_comment = rs.getString("f_comment")
+                        val satd_id = rs.getInt("satd_id")
+                        val f_comment = rs.getString("v2_comment")
                         val containing_class = rs.getString("containing_class")
-                        val containing_method = rs.getString("containing_method")
-                        tableModel.addRow(arrayOf(f_id, f_comment, containing_class, containing_method))
+                        val containing_method = rs.getString("v2_method")
+                        val resolution = rs.getString("resolution")
+                        val refactoring = rs.getString("refactoring") ?: "N/A"
+                        tableModel.addRow(arrayOf(satd_id, f_comment, containing_class, containing_method, resolution, refactoring))
                     }
                     adjustColumnWidths(table)
                 }
@@ -280,33 +309,49 @@ class SATDDatabaseManager {
 
                                 if (exitCode == 0) {
                                     val newRows = mutableListOf<Array<Any>>()
-                                    val query = """
-                                        SELECT
-                                            s_in_file.f_id,
-                                            s_in_file.f_comment,
-                                            s_in_file.containing_class,
-                                            s_in_file.containing_method,
-                                            satd.resolution,
-                                            COALESCE(rmv.type, 'N/A') AS refactoring
-                                        FROM SATDInFile s_in_file
-                                        LEFT JOIN SATD satd ON s_in_file.f_id = satd.second_file
-                                        LEFT JOIN RefactoringsRmv rmv ON satd.second_commit = rmv.commit_hash
-                                    """.trimIndent()
+                                    val query = "SELECT SATD.satd_id, " +
+                                            "Projects.p_name AS project_name, " +
+                                            "SATD.satd_instance_id, " +
+                                            "SATD.resolution, " +
+                                            "SecondCommit.commit_hash AS resolution_commit, " +
+                                            "FirstCommit.author_name, " +
+                                            "FirstFile.f_path AS v1_path, " +
+                                            "FirstFile.containing_class AS v1_class, " +
+                                            "FirstFile.containing_method AS v1_method, " +
+                                            "FirstFile.f_comment AS v1_comment, " +
+                                            "SecondCommit.commit_hash AS v2_commit, " +
+                                            "SecondCommit.commit_date AS v2_commit_date, " +
+                                            "SecondCommit.author_date AS v2_author_date, " +
+                                            "SecondFile.f_path AS v2_path, " +
+                                            "SecondFile.containing_class AS v2_class, " +
+                                            "SecondFile.containing_method AS v2_method, " +
+                                            "SecondFile.method_declaration AS method_declaration, " +
+                                            "SecondFile.method_body AS method_body, " +
+                                            "SecondFile.f_comment AS v2_comment, " +
+                                            "COALESCE(rmv.type, 'N/A') AS refactoring " +
+                                            "FROM SATD " +
+                                            "INNER JOIN SATDInFile AS FirstFile ON SATD.first_file = FirstFile.f_id " +
+                                            "INNER JOIN SATDInFile AS SecondFile ON SATD.second_file = SecondFile.f_id " +
+                                            "INNER JOIN Commits AS FirstCommit ON SATD.first_commit = FirstCommit.commit_hash " +
+                                            "INNER JOIN Commits AS SecondCommit ON SATD.second_commit = SecondCommit.commit_hash " +
+                                            "INNER JOIN Projects ON SATD.p_id = Projects.p_id " +
+                                            "LEFT JOIN RefactoringsRmv rmv ON resolution_commit = rmv.commit_hash" +
+                                            "ORDER BY satd_id DESC;"
 
                                     DriverManager.getConnection(url).use { conn ->
                                         conn.createStatement().use { stmt ->
                                             val rs = stmt.executeQuery(query)
                                             while (rs.next()) {
-                                                val f_id = rs.getInt("f_id")
-                                                val f_comment = rs.getString("f_comment")
+                                                val satd_id = rs.getInt("satd_id")
+                                                val f_comment = rs.getString("v2_comment")
                                                 val containing_class = rs.getString("containing_class")
-                                                val containing_method = rs.getString("containing_method")
-                                                val resolution = rs.getString("resolution") ?: "N/A"
+                                                val containing_method = rs.getString("v2_method")
+                                                val resolution = rs.getString("resolution")
                                                 val refactoring = rs.getString("refactoring") ?: "N/A"
 
                                                 newRows.add(
                                                     arrayOf(
-                                                        f_id,
+                                                        satd_id,
                                                         f_comment,
                                                         containing_class,
                                                         containing_method,

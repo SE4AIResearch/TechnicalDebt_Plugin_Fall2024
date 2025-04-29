@@ -117,7 +117,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val tableModel = object : DefaultTableModel(){
             override fun isCellEditable(row: Int, column: Int): Boolean = false
         }
-        tableModel.addColumn("File ID")
+        tableModel.addColumn("SATD ID")
         tableModel.addColumn("Comment")
         tableModel.addColumn("Containing Class")
         tableModel.addColumn("Containing Method")
