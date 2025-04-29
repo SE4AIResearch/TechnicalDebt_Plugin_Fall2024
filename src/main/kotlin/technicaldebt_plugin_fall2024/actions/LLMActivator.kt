@@ -40,16 +40,16 @@ abstract class LLMActivator(): IntentionAction {
         }
 
         fun transform(
-                project: Project,
-                text: String,
-                editor: Editor,
-                textRange: TextRange,
-                satdType: String
+            project: Project,
+            text: String,
+            editor: Editor,
+            textRange: TextRange,
+            satdType: String?
         ) {
 
             val settings = LLMSettingsManager.getInstance()
 
-            if (satdType.isEmpty()) {
+            if (satdType.isNullOrEmpty()) {
                 Messages.showWarningDialog(
                         project,
                         "SATD type not detected. Please ensure your code contains valid SATD.",
@@ -65,15 +65,8 @@ abstract class LLMActivator(): IntentionAction {
                     object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
                         override fun run(indicator: ProgressIndicator) {
 
-                            var prompt = ""
-                            if(satdType.isNotEmpty())
-                            {
-                                prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'."
-                            }
-                            else
-                            {
-                                prompt = "No SATDType provided. Output raw code fixing the following issue: {$text}. Do NOT include any formatting delimiters such as '`'."
-                            }
+                            val prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'."
+
                             var response1: LLMBaseResponse? = null
                             var response2: LLMBaseResponse? = null
 

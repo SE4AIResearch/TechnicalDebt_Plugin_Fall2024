@@ -22,19 +22,19 @@ class SATDDatabaseManager {
         val startLine: Int?,
         val endLine: Int?,
         val filePath: String?,
-        val refactoring: String?
     )
 
     fun getSATDTableInfo(project: Project, fileID: Int): SATDInfo {
         val databasePath = PathManager.getConfigPath() + "/databases/${project.name}.db"
         val url = "jdbc:sqlite:$databasePath"
-        var satdInfo = SATDInfo(null, null, null, null, null)
+        var satdInfo = SATDInfo(null, null, null, null)
+
+        val inFileQuery = "SELECT start_line, end_line, f_path FROM SATDInFile WHERE f_id = ?"
+        val satdQuery = "SELECT resolution, second_commit FROM SATD WHERE second_file = ?"
 
         try {
             DriverManager.getConnection(url).use { conn ->
-                val inFileQuery = "SELECT start_line, end_line, f_path FROM SATDInFile WHERE f_id = ?"
-                val satdQuery = "SELECT resolution, second_commit FROM SATD WHERE second_file = ?"
-
+                // First query for startLine, endLine, filePath
                 conn.prepareStatement(inFileQuery).use { pstmt ->
                     pstmt.setInt(1, fileID)
                     val rs = pstmt.executeQuery()
@@ -46,10 +46,22 @@ class SATDDatabaseManager {
                         )
                     }
                 }
+
+                // Then separately query for resolution
+                conn.prepareStatement(satdQuery).use { pstmt ->
+                    pstmt.setInt(1, fileID)
+                    val rs = pstmt.executeQuery()
+                    if (rs.next()) {
+                        satdInfo = satdInfo.copy(
+                            resolution = rs.getString("resolution")
+                        )
+                    }
+                }
             }
         } catch (e: Exception) {
-            error("Error fetching refactorings: ${e.message}")
+            error("Error fetching SATD info: ${e.message}")
         }
+
 
         return satdInfo
     }
@@ -106,7 +118,7 @@ class SATDDatabaseManager {
                         }
 
                         seenRows.add(rowKey)
-                        println("Row: $rowKey")
+//                        println("Row: $rowKey")
 
                         tableModel.addRow(
                             arrayOf(
@@ -259,9 +271,16 @@ class SATDDatabaseManager {
 //                                    "-r", "$libPath/test_repo.csv", "-d", databasePath, "-u", username, "-p", pat
 //                                )
                                 val processBuilder = ProcessBuilder(
-                                    "java", "-jar", "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
+                                    "java",
+                                    "--enable-native-access=ALL-UNNAMED",
+                                    "--add-opens=java.base/java.lang=ALL-UNNAMED",
+                                    "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+
+                                    "-jar",
+                                    "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
                                     "-r", "$libPath/test_repo.csv", "-d", databasePath
                                 )
+
 
                                 val logDir = File(System.getProperty("user.home"), ".technical_debt/logs")
                                 if (!logDir.exists()) logDir.mkdirs()

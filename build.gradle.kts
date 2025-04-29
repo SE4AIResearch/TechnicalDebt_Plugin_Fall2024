@@ -60,6 +60,8 @@ dependencies {
 
     implementation("org.xerial:sqlite-jdbc:3.36.0.3")
     implementation(files("lib/satd_detector.jar"))
+    implementation("com.github.hullbend:mt-java:1.0.5")
+
 
     // If com.technicaldebt_plugin_fall2024 is a local JAR, use this instead:
     // implementation(files("lib/com.technicaldebt_plugin_fall2024.jar"))

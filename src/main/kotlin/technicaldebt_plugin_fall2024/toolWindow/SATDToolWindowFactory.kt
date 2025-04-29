@@ -17,12 +17,9 @@ import technicaldebt_plugin_fall2024.toolWindow.Without.SATDFileManager
 import com.intellij.openapi.editor.Document
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.Presentation
-import com.intellij.ui.components.JBPanel
 
 import java.awt.*
 import java.awt.event.MouseAdapter
@@ -37,16 +34,11 @@ import javax.swing.table.TableCellRenderer
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.util.TextRange
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.psi.PsiManager
-import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
-import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
-import technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableRowSorter
 
@@ -72,7 +64,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
     private val satdFileManager = SATDFileManager()
     private val satdDatabaseManager = SATDDatabaseManager()
 
-    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow, ) {
+        var selectedFileId: Int? = null
         val toolWindowPanel = JPanel(BorderLayout())
 //        val tabbedPane = JTabbedPane()
 
@@ -81,8 +74,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
         val pathLabel = JLabel("Path to SATD: ")
         val linesLabel = JBLabel("Lines: [,]")
-        val resolutionLabel = JBLabel("Resolution: []")
-        val refactoringLabel = JBLabel("Refactoring: []")
+//        val resolutionLabel = JBLabel("Resolution: []")
+//        val refactoringLabel = JBLabel("Refactoring: []")
 
         val bottomPanel = JPanel(BorderLayout())
 
@@ -105,10 +98,10 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             anchor = GridBagConstraints.EAST
             insets = JBUI.insets(5, 10)
         }
-        rightPanel.add(resolutionLabel, rightConstraints)
-        rightConstraints.gridx = 1
-        rightPanel.add(refactoringLabel, rightConstraints)
-        rightConstraints.gridx = 2
+//        rightPanel.add(resolutionLabel, rightConstraints)
+//        rightConstraints.gridx = 1
+//        rightPanel.add(refactoringLabel, rightConstraints)
+//        rightConstraints.gridx = 2
 
 
 
@@ -126,6 +119,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         tableModel.addColumn("Comment")
         tableModel.addColumn("Containing Class")
         tableModel.addColumn("Containing Method")
+        tableModel.addColumn("Resolution")
+        tableModel.addColumn("Refactoring")
 
         val table = JTable(tableModel)
         table.autoResizeMode = JTable.AUTO_RESIZE_OFF
@@ -165,20 +160,22 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 var filePath: String? = null
                 var l1: Int? = null
                 var l2: Int? = null
+                var satdType: String? = null
 
-                val satdInfo = satdDatabaseManager.getSATDTableInfo(project, fileId )
+                val satdInfo = satdDatabaseManager.getSATDTableInfo(project, fileId)
 
                 filePath = satdInfo.filePath!!
                 l1 = satdInfo.startLine!!
                 l2 = satdInfo.endLine!!
+                satdType = satdInfo.resolution
 
 
                 if (e.clickCount == 1) {
 
                     pathLabel.text = "Path to SATD: $filePath   "
                     linesLabel.text = "Lines: [$l1, $l2]"
-                    resolutionLabel.text = "Resolution:[${satdInfo.resolution}]"
-                    refactoringLabel.text = "Refactoring: [${satdInfo.refactoring}]"
+//                    resolutionLabel.text = "Resolution:[${satdInfo.resolution}]"
+//                    refactoringLabel.text = "Refactoring: [${satdInfo.refactoring}]"
 
                     table.setRowSelectionInterval(row, row)
 
@@ -286,30 +283,28 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 }
             })
 
-        add(object : AnAction("Send to LLM", "Send selected code to LLM for processing", AllIcons.RunConfigurations.Remote) {
-            override fun update(e: AnActionEvent) {
-                // Only enable the action when text is selected in the editor
-                val editor = getCurrentEditor(project)
-                val selectionModel = editor?.selectionModel
-                e.presentation.isEnabled = selectionModel?.hasSelection() == true
-            }
+            add(object : AnAction("Send to LLM", "Send selected code to LLM", AllIcons.RunConfigurations.Remote) {
+                override fun update(e: AnActionEvent) {
+                    val editor = getCurrentEditor(project)
+                    e.presentation.isEnabled = editor?.selectionModel?.hasSelection() == true && selectedFileId != null
+                }
 
-            override fun actionPerformed(e: AnActionEvent) {
-                val editor = getCurrentEditor(project)
-                val document = editor?.document ?: return
-                val selectionModel = editor.selectionModel
-                val selectedText = selectionModel.selectedText ?: return
-                val textRange = TextRange(selectionModel.selectionStart, selectionModel.selectionEnd)
+                override fun actionPerformed(e: AnActionEvent) {
+                    val editor = getCurrentEditor(project) ?: return
+                    val selectionModel = editor.selectionModel
+                    val selectedText = selectionModel.selectedText ?: return
+                    val textRange = TextRange(selectionModel.selectionStart, selectionModel.selectionEnd)
 
-                val satdType = resolutionLabel.text.removePrefix("Resolution:").trim()
+                    val satdInfo = satdDatabaseManager.getSATDTableInfo(project, selectedFileId!!)
+                    val satdType = satdInfo.resolution
 
-                LLMActivator.transform(project, selectedText, editor, textRange, satdType)
-                val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("LLM Output")
-                toolWindow?.show(null)
-            }
-        })
+                    LLMActivator.transform(project, selectedText, editor, textRange, satdType)
+                    ToolWindowManager.getInstance(project).getToolWindow("LLM Output")?.show(null)
+                }
+            })
 
-    }
+
+        }
 
         val toolbar = ActionManager.getInstance().createActionToolbar("SATDToolbar", actionGroup, true)
         toolbar.targetComponent = toolWindowPanel
