@@ -17,9 +17,12 @@ import technicaldebt_plugin_fall2024.toolWindow.Without.SATDFileManager
 import com.intellij.openapi.editor.Document
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.ui.components.JBPanel
 
 import java.awt.*
 import java.awt.event.MouseAdapter
@@ -34,11 +37,18 @@ import javax.swing.table.TableCellRenderer
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.psi.PsiManager
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiUtilBase
+import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
+import technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow
+import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.TableRowSorter
 
 fun getCurrentEditor(project: Project): Editor? {
     return FileEditorManager.getInstance(project).selectedTextEditor
@@ -71,6 +81,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
         val pathLabel = JLabel("Path to SATD: ")
         val linesLabel = JBLabel("Lines: [,]")
+        val resolutionLabel = JBLabel("Resolution: []")
+        val refactoringLabel = JBLabel("Refactoring: []")
 
         val bottomPanel = JPanel(BorderLayout())
 
@@ -93,7 +105,10 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             anchor = GridBagConstraints.EAST
             insets = JBUI.insets(5, 10)
         }
-
+        rightPanel.add(resolutionLabel, rightConstraints)
+        rightConstraints.gridx = 1
+        rightPanel.add(refactoringLabel, rightConstraints)
+        rightConstraints.gridx = 2
 
 
 
@@ -111,14 +126,30 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         tableModel.addColumn("Comment")
         tableModel.addColumn("Containing Class")
         tableModel.addColumn("Containing Method")
-        tableModel.addColumn("Resolution")
-        tableModel.addColumn("Refactoring")
 
         val table = JTable(tableModel)
         table.autoResizeMode = JTable.AUTO_RESIZE_OFF
         table.columnModel.getColumn(1).preferredWidth = 500
         table.isEnabled = true
         table.columnModel.getColumn(1).cellRenderer = TextAreaRenderer()
+
+        val sorter = TableRowSorter(tableModel)
+        table.rowSorter = sorter
+
+        sorter.setComparator(0, Comparator<Int> { o1, o2 -> o1.compareTo(o2) })
+
+        for (i in 0 until table.columnCount) {
+            sorter.setSortable(i, true)
+        }
+
+        for (col in 0 until table.columnCount) {
+            if (col == 1) {
+                table.columnModel.getColumn(col).cellRenderer = ThickTextAreaRenderer()
+            } else {
+                table.columnModel.getColumn(col).cellRenderer = ThickBorderCellRenderer()
+            }
+        }
+        table.tableHeader.defaultRenderer = ThickHeaderRenderer()
 
         table.setCellSelectionEnabled(false)
         table.setColumnSelectionAllowed(false)
@@ -131,20 +162,23 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 val row = table.rowAtPoint(e.point)
                 val fileId = table.getValueAt(row, 0) as Int
 
-                var filePath: String = "WIP"
-                var l1: Int = -1
-                var l2: Int = -1
+                var filePath: String? = null
+                var l1: Int? = null
+                var l2: Int? = null
 
-                val satdInfo = satdDatabaseManager.getSATDTableInfo(project, fileId)
+                val satdInfo = satdDatabaseManager.getSATDTableInfo(project, fileId )
 
                 filePath = satdInfo.filePath!!
                 l1 = satdInfo.startLine!!
                 l2 = satdInfo.endLine!!
 
+
                 if (e.clickCount == 1) {
 
                     pathLabel.text = "Path to SATD: $filePath   "
                     linesLabel.text = "Lines: [$l1, $l2]"
+                    resolutionLabel.text = "Resolution:[${satdInfo.resolution}]"
+                    refactoringLabel.text = "Refactoring: [${satdInfo.refactoring}]"
 
                     table.setRowSelectionInterval(row, row)
 
@@ -218,6 +252,27 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         }
 
         val actionGroup = DefaultActionGroup().apply {
+            add(object : AnAction("Reverse Order", "Reverse the current table order", AllIcons.RunConfigurations.SortbyDuration) {
+                override fun actionPerformed(e: AnActionEvent) {
+                    // Get current sort keys
+                    val currentKeys = table.rowSorter?.sortKeys
+
+                    if (currentKeys.isNullOrEmpty()) {
+                        // If no sorting is applied, sort by the first column in descending order
+                        sorter.setSortKeys(listOf(RowSorter.SortKey(0, SortOrder.DESCENDING)))
+                    } else {
+                        // Toggle the sort order of the current sort column
+                        val currentKey = currentKeys[0]
+                        val newOrder = if (currentKey.sortOrder == SortOrder.ASCENDING) {
+                            SortOrder.DESCENDING
+                        } else {
+                            SortOrder.ASCENDING
+                        }
+                        sorter.setSortKeys(listOf(RowSorter.SortKey(currentKey.column, newOrder)))
+                    }
+                }
+            })
+
             add(object : AnAction("Fetch SATD", "Load the SATD records into the table", AllIcons.Actions.Refresh) {
                 override fun actionPerformed(e: AnActionEvent) {
                     ProgressManager.getInstance().runProcessWithProgressSynchronously(
@@ -246,8 +301,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 val selectedText = selectionModel.selectedText ?: return
                 val textRange = TextRange(selectionModel.selectionStart, selectionModel.selectionEnd)
 
-                val satdType = tableModel.getValueAt(table.selectedRow, 4) as String
-                println("Selected SATD TYPE: $satdType")
+                val satdType = resolutionLabel.text.removePrefix("Resolution:").trim()
+
                 LLMActivator.transform(project, selectedText, editor, textRange, satdType)
                 val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("LLM Output")
                 toolWindow?.show(null)
@@ -265,7 +320,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         toolWindow.contentManager.addContent(content)
     }
 
-    class TextAreaRenderer : JTextArea(), TableCellRenderer {
+    open class TextAreaRenderer : JTextArea(), TableCellRenderer {
         init {
             lineWrap = true
             wrapStyleWord = true
@@ -292,7 +347,58 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             return this
         }
     }
+    class ThickTextAreaRenderer : TextAreaRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable, value: Any?, isSelected: Boolean,
+            hasFocus: Boolean, row: Int, column: Int
+        ): Component {
+            val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JComponent
 
+            // Outer border is now 1px; inner padding remains.
+            val thinBorder = BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK)
+            val padding = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            comp.border = BorderFactory.createCompoundBorder(thinBorder, padding)
+            return comp
+        }
+    }
+
+    class ThickBorderCellRenderer : DefaultTableCellRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable, value: Any?,
+            isSelected: Boolean, hasFocus: Boolean,
+            row: Int, column: Int
+        ): Component {
+            val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JComponent
+
+            val thinBorder = BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK)
+            val padding = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            comp.border = BorderFactory.createCompoundBorder(thinBorder, padding)
+            return comp
+        }
+    }
+
+    class ThickHeaderRenderer : DefaultTableCellRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable,
+            value: Any?,
+            isSelected: Boolean,
+            hasFocus: Boolean,
+            row: Int,
+            column: Int
+        ): Component {
+            val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JComponent
+
+            comp.background = Color.DARK_GRAY
+            comp.foreground = Color.WHITE
+            font = font.deriveFont(Font.BOLD)
+
+            val thinBorder = BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK)
+            val padding = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            comp.border = BorderFactory.createCompoundBorder(thinBorder, padding)
+
+            return comp
+        }
+    }
     companion object {
         fun adjustColumnWidths(table: JTable) {
             for (col in 0 until table.columnCount) {
