@@ -47,6 +47,8 @@ import com.intellij.psi.util.PsiUtilBase
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
 import technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow
+import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.TableRowSorter
 
 fun getCurrentEditor(project: Project): Editor? {
     return FileEditorManager.getInstance(project).selectedTextEditor
@@ -130,6 +132,24 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         table.columnModel.getColumn(1).preferredWidth = 500
         table.isEnabled = true
         table.columnModel.getColumn(1).cellRenderer = TextAreaRenderer()
+
+        val sorter = TableRowSorter(tableModel)
+        table.rowSorter = sorter
+
+        sorter.setComparator(0, Comparator<Int> { o1, o2 -> o1.compareTo(o2) })
+
+        for (i in 0 until table.columnCount) {
+            sorter.setSortable(i, true)
+        }
+
+        for (col in 0 until table.columnCount) {
+            if (col == 1) {
+                table.columnModel.getColumn(col).cellRenderer = ThickTextAreaRenderer()
+            } else {
+                table.columnModel.getColumn(col).cellRenderer = ThickBorderCellRenderer()
+            }
+        }
+        table.tableHeader.defaultRenderer = ThickHeaderRenderer()
 
         table.setCellSelectionEnabled(false)
         table.setColumnSelectionAllowed(false)
@@ -231,6 +251,27 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         }
 
         val actionGroup = DefaultActionGroup().apply {
+            add(object : AnAction("Reverse Order", "Reverse the current table order", AllIcons.RunConfigurations.SortbyDuration) {
+                override fun actionPerformed(e: AnActionEvent) {
+                    // Get current sort keys
+                    val currentKeys = table.rowSorter?.sortKeys
+
+                    if (currentKeys.isNullOrEmpty()) {
+                        // If no sorting is applied, sort by the first column in descending order
+                        sorter.setSortKeys(listOf(RowSorter.SortKey(0, SortOrder.DESCENDING)))
+                    } else {
+                        // Toggle the sort order of the current sort column
+                        val currentKey = currentKeys[0]
+                        val newOrder = if (currentKey.sortOrder == SortOrder.ASCENDING) {
+                            SortOrder.DESCENDING
+                        } else {
+                            SortOrder.ASCENDING
+                        }
+                        sorter.setSortKeys(listOf(RowSorter.SortKey(currentKey.column, newOrder)))
+                    }
+                }
+            })
+
             add(object : AnAction("Fetch SATD", "Load the SATD records into the table", AllIcons.Actions.Refresh) {
                 override fun actionPerformed(e: AnActionEvent) {
                     ProgressManager.getInstance().runProcessWithProgressSynchronously(
@@ -278,7 +319,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         toolWindow.contentManager.addContent(content)
     }
 
-    class TextAreaRenderer : JTextArea(), TableCellRenderer {
+    open class TextAreaRenderer : JTextArea(), TableCellRenderer {
         init {
             lineWrap = true
             wrapStyleWord = true
@@ -305,7 +346,58 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             return this
         }
     }
+    class ThickTextAreaRenderer : TextAreaRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable, value: Any?, isSelected: Boolean,
+            hasFocus: Boolean, row: Int, column: Int
+        ): Component {
+            val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JComponent
 
+            // Outer border is now 1px; inner padding remains.
+            val thinBorder = BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK)
+            val padding = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            comp.border = BorderFactory.createCompoundBorder(thinBorder, padding)
+            return comp
+        }
+    }
+
+    class ThickBorderCellRenderer : DefaultTableCellRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable, value: Any?,
+            isSelected: Boolean, hasFocus: Boolean,
+            row: Int, column: Int
+        ): Component {
+            val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JComponent
+
+            val thinBorder = BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK)
+            val padding = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            comp.border = BorderFactory.createCompoundBorder(thinBorder, padding)
+            return comp
+        }
+    }
+
+    class ThickHeaderRenderer : DefaultTableCellRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable,
+            value: Any?,
+            isSelected: Boolean,
+            hasFocus: Boolean,
+            row: Int,
+            column: Int
+        ): Component {
+            val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JComponent
+
+            comp.background = Color.DARK_GRAY
+            comp.foreground = Color.WHITE
+            font = font.deriveFont(Font.BOLD)
+
+            val thinBorder = BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK)
+            val padding = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            comp.border = BorderFactory.createCompoundBorder(thinBorder, padding)
+
+            return comp
+        }
+    }
     companion object {
         fun adjustColumnWidths(table: JTable) {
             for (col in 0 until table.columnCount) {
