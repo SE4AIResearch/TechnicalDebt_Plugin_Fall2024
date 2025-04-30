@@ -2,7 +2,7 @@ package com.technicaldebt_plugin_fall2024.models.gemini
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.technicaldebt_plugin_fall2024.models.AuthorizationException
+import technicaldebt_plugin_fall2024.AuthorizationException
 import com.technicaldebt_plugin_fall2024.models.CredentialsHolder
 import com.technicaldebt_plugin_fall2024.models.LLMBaseRequest
 import com.intellij.util.io.HttpRequests

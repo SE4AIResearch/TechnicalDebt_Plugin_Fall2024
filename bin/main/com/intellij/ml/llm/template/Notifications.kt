@@ -8,7 +8,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
 
 private fun createNotificationGroup(): NotificationGroup {
-    return NotificationGroupManager.getInstance().getNotificationGroup("AI notification group")
+    return NotificationGroupManager.getInstance().getNotificationGroup("Technical Debt group")
 }
 
 internal fun showUnauthorizedNotification(project: Project) {

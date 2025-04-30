@@ -124,6 +124,6 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
     }
 }
 
-fun openSettingsDialog(project: Project?) {
+fun openLLMSettingsDialog(project: Project?) {
     ShowSettingsUtil.getInstance().showSettingsDialog(project, LLMConfigurable::class.java)
 }

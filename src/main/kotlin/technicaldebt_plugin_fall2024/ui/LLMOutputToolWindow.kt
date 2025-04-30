@@ -96,6 +96,10 @@ class LLMOutputToolWindow : ToolWindowFactory {
                     LLMActivator.updateDocument(project, newText, editor.document, textRange)
                 }
                 applyButton?.isEnabled = false
+
+                editorField1?.text = "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
+                editorField2?.text =  "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
+
                 llmRequested = false
             }
         }
@@ -433,7 +437,11 @@ class LLMOutputToolWindow : ToolWindowFactory {
                             }
                         }
                     }
-                    add(runButton, BorderLayout.SOUTH)
+                    val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                        border = BorderFactory.createEmptyBorder(5, 5, 5, 10)
+                        add(runButton)
+                    }
+                    add(buttonPanel, BorderLayout.SOUTH)
                 }
                 add(combinedPanel, BorderLayout.CENTER)
 
@@ -482,7 +490,11 @@ class LLMOutputToolWindow : ToolWindowFactory {
                             }
                         }
                     }
-                    add(runButton, BorderLayout.SOUTH)
+                    val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+                        border = BorderFactory.createEmptyBorder(5, 5, 5, 10)
+                        add(runButton)
+                    }
+                    add(buttonPanel, BorderLayout.SOUTH)
                 }
                 add(combinedPanel, BorderLayout.CENTER)
             }
@@ -504,10 +516,13 @@ class LLMOutputToolWindow : ToolWindowFactory {
 
             applyButton = JButton("Accept").apply {
                 isEnabled = false
-                addActionListener { applyChanges() }
+                addActionListener {
+                    applyChanges()
+                    toolWindow.hide(null)
+                }
             }
 
-            val rejectButton = JButton("Reject").apply {
+            /*val rejectButton = JButton("Reject").apply {
                 addActionListener {
                     editorField1?.text = "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
                     editorField2?.text =  "fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}"
@@ -515,7 +530,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                     llmRequested = false
                     toolWindow.hide(null)
                 }
-            }
+            }*/
 
             val separatorPanel = JPanel(BorderLayout()).apply {
                 border = BorderFactory.createEmptyBorder(10, 0, 10, 0)  // Add padding here
@@ -524,7 +539,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
 
             val bottomPanel = JPanel(BorderLayout()).apply {
 
-                add(rejectButton, BorderLayout.CENTER)
+                //add(rejectButton, BorderLayout.CENTER)
                 add(separatorPanel, BorderLayout.NORTH)
                 add(applyButton, BorderLayout.SOUTH)
 

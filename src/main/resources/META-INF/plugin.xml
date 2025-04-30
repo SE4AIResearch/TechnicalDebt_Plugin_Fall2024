@@ -34,6 +34,14 @@
                 id="ml.llm.LLMConfigurable"
                 bundle="messages.LLMBundle"
                 key="settings.configurable.display.name"/>
+
+        <applicationConfigurable
+                groupId="tools"
+                instance="technicaldebt_plugin_fall2024.settings.git.GitHubConfigurable"
+                id="ml.github.credentials"
+                displayName="Technical Debt: Github Credentials"
+        />
+
         <applicationConfigurable
                 groupId="ml.llm.LLMConfigurable"
                 instance="com.technicaldebt_plugin_fall2024.settings.openai.AdvancedSettingsConfigurable"
@@ -53,6 +61,6 @@
                      description="If enabled, emulates requests instead of using OpenAI API. Used for debug purposes."
                      key="llm.for.code.enable.mock.requests"/>
 
-        <notificationGroup id="AI notification group" displayType="STICKY_BALLOON" bundle="messages.LLMBundle" key="notification.group.name"/>
+        <notificationGroup id="Technical Debt group" displayType="STICKY_BALLOON" bundle="messages.LLMBundle" key="notification.group.name"/>
     </extensions>
 </idea-plugin>

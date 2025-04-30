@@ -18,9 +18,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import LLMBundle
 import com.intellij.codeInsight.intention.IntentionAction
-import technicaldebt_plugin_fall2024.models.sendChatRequest
-import technicaldebt_plugin_fall2024.models.sendGeminiRequest
-import technicaldebt_plugin_fall2024.models.sendOllamaRequest
+import technicaldebt_plugin_fall2024.sendChatRequest
+import technicaldebt_plugin_fall2024.sendGeminiRequest
+import technicaldebt_plugin_fall2024.sendOllamaRequest
 import technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow
 import java.awt.EventQueue.invokeLater
 import com.intellij.psi.PsiDocumentManager
