@@ -1,36 +1,40 @@
 package technicaldebt_plugin_fall2024.settings.git
 
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
-import com.intellij.credentialStore.CredentialAttributes
-import com.intellij.credentialStore.Credentials
-import com.intellij.credentialStore.generateServiceName
-import com.intellij.ide.passwordSafe.PasswordSafe
+import com.intellij.openapi.components.*
+import com.intellij.openapi.components.Service.Level
+import com.intellij.openapi.project.Project
 
-const val GITHUB_CREDENTIALS_KEY = "GITHUB_CREDENTIALS"
+@State(
+    name = "GitHubSettings",
+    storages = [Storage("TechnicalDebtPlugin_GitHubSettings.xml")]
+)
+@Service(Level.APP)
+class GitHubSettingsManager : PersistentStateComponent<GitHubSettingsManager.State> {
 
-@Service(Service.Level.APP)
-class GitHubSettingsManager {
-    private var username: String = ""
-    private var token: String = ""
+    data class State(
+        var username: String = "",
+        var token: String = ""
+    )
 
-    fun getGitHubUsername(): String = username
+    private var state = State()
+
+    override fun getState(): State = state
+
+    override fun loadState(state: State) {
+        this.state = state
+    }
+
+    fun getGitHubUsername(): String = state.username
     fun setGitHubUsername(value: String) {
-        username = value
+        state.username = value
     }
 
-    fun getGitHubToken(): String = token
+    fun getGitHubToken(): String = state.token
     fun setGitHubToken(value: String) {
-        token = value
-    }
-
-    fun applyCredentials() {
-        val attributes = CredentialAttributes(generateServiceName("Git", GITHUB_CREDENTIALS_KEY))
-        val credentials = Credentials(username, token)
-        PasswordSafe.instance.set(attributes, credentials)
+        state.token = value
     }
 
     companion object {
-        fun getInstance(): GitHubSettingsManager = service<GitHubSettingsManager>()
+        fun getInstance(): GitHubSettingsManager = service()
     }
 }

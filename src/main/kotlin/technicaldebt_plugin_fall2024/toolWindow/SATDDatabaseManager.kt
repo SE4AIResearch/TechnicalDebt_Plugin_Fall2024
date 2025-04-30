@@ -5,7 +5,9 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
+import com.technicaldebt_plugin_fall2024.showUnauthorizedGitNotification
 import technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory.Companion.adjustColumnWidths
+import technicaldebt_plugin_fall2024.AuthorizationException
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
@@ -215,7 +217,7 @@ class SATDDatabaseManager {
     ) {
         val sqlFilePath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/sql/satdsql.sql"
         val databasePath = PathManager.getConfigPath() + "/databases/${project.name}.db"
-        val libPath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/"
+        val libPath = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff"
 
         val inputStream: InputStream = try {
             FileInputStream(sqlFilePath)
@@ -248,28 +250,25 @@ class SATDDatabaseManager {
                     val task = object : Task.Backgroundable(project, "Running SATD Analysis", true) {
                         override fun run(indicator: ProgressIndicator) {
                             try {
-//                                val username = GitCredentialsHolder.getInstance().getUsername()?.ifEmpty { null }
-//                                val pat = GitCredentialsHolder.getInstance().getPassword()?.ifEmpty { null }
-//
-//                                if (username == null) {
-//                                    showUnauthorizedGitNotification(project, "Username")
-//                                    throw AuthorizationException("GitHub Username is not provided.")
-//                                }
-//                                if (pat == null) {
-//                                    showUnauthorizedGitNotification(project, "Personal Access Token (PAT)")
-//                                    throw AuthorizationException("GitHub PAT is not provided.")
-//                                }
-//
-//                                val isAuthenticated = GitCredentialsHolder.getInstance().verifyGitHubAuthentication()
-//                                if (!isAuthenticated) {
-//                                    showUnauthorizedGitNotification(project, "Authentication Error")
-//                                    throw AuthorizationException("GitHub Authentication Error.")
-//                                }
+                                val username = GitCredentialsHolder.getInstance().getUsername()?.ifEmpty { null }
+                                val pat = GitCredentialsHolder.getInstance().getPassword()?.ifEmpty { null }
 
-//                                val processBuilder = ProcessBuilder(
-//                                    "java", "-jar", "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
-//                                    "-r", "$libPath/test_repo.csv", "-d", databasePath, "-u", username, "-p", pat
-//                                )
+                                if (username == null) {
+                                    showUnauthorizedGitNotification(project, "Username")
+                                    throw AuthorizationException("GitHub Username is not provided.")
+                                }
+                                if (pat == null) {
+                                    showUnauthorizedGitNotification(project, "Personal Access Token (PAT)")
+                                    throw AuthorizationException("GitHub PAT is not provided.")
+                                }
+
+                                val isAuthenticated = GitCredentialsHolder.getInstance().verifyGitHubAuthentication()
+                                if (!isAuthenticated) {
+                                    showUnauthorizedGitNotification(project, "Authentication Error")
+                                    throw AuthorizationException("GitHub Authentication Error.")
+                                }
+
+
                                 val processBuilder = ProcessBuilder(
                                     "java",
                                     "--enable-native-access=ALL-UNNAMED",
@@ -278,7 +277,8 @@ class SATDDatabaseManager {
 
                                     "-jar",
                                     "$libPath/target/satd-analyzer-jar-with-all-dependencies.jar",
-                                    "-r", "$libPath/test_repo.csv", "-d", databasePath
+                                    "-r", "$libPath/test_repo.csv", "-d", databasePath,
+                                    "-u", username, "-p", pat
                                 )
 
 

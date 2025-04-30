@@ -1,14 +1,9 @@
-import com.intellij.credentialStore.CredentialAttributes
-import com.intellij.credentialStore.Credentials
-import com.intellij.credentialStore.generateServiceName
-import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import technicaldebt_plugin_fall2024.settings.git.GitHubSettingsManager
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Base64
-
-const val GITHUB_CREDENTIALS_KEY = "GITHUB_CREDENTIALS"
 
 @Service(Service.Level.APP)
 class GitCredentialsHolder {
@@ -16,27 +11,11 @@ class GitCredentialsHolder {
         fun getInstance(): GitCredentialsHolder = service<GitCredentialsHolder>()
     }
 
-    fun getUsername(): String? {
-        val attributes = createCredentialAttributes(GITHUB_CREDENTIALS_KEY)
-        val credentials = PasswordSafe.instance.get(attributes)
-        return credentials?.userName
-    }
+    private val settings = service<GitHubSettingsManager>()
 
-    fun getPassword(): String? {
-        val attributes = createCredentialAttributes(GITHUB_CREDENTIALS_KEY)
-        val credentials = PasswordSafe.instance.get(attributes)
-        return credentials?.getPasswordAsString()
-    }
+    fun getUsername(): String? = settings.getGitHubUsername().ifEmpty { null }
 
-    fun setCredentials(key: String, username: String, pat: String) {
-        val attributes = createCredentialAttributes(key)
-        val credentials = Credentials(username, pat)
-        PasswordSafe.instance.set(attributes, credentials)
-    }
-
-    private fun createCredentialAttributes(key: String): CredentialAttributes {
-        return CredentialAttributes(generateServiceName("Git", key))
-    }
+    fun getPassword(): String? = settings.getGitHubToken().ifEmpty { null }
 
     fun verifyGitHubAuthentication(): Boolean {
         val username = getUsername() ?: return false
