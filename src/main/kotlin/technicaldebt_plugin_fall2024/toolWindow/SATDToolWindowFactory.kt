@@ -116,7 +116,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             override fun isCellEditable(row: Int, column: Int): Boolean = false
         }
         tableModel.addColumn("File ID")
-        tableModel.addColumn("Comment")
+        tableModel.addColumn("Initial Comment")
+        tableModel.addColumn("Final Comment")
         tableModel.addColumn("Containing Class")
         tableModel.addColumn("Containing Method")
         tableModel.addColumn("Resolution")
@@ -125,8 +126,10 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val table = JTable(tableModel)
         table.autoResizeMode = JTable.AUTO_RESIZE_OFF
         table.columnModel.getColumn(1).preferredWidth = 500
+        table.columnModel.getColumn(2).preferredWidth = 500
         table.isEnabled = true
         table.columnModel.getColumn(1).cellRenderer = TextAreaRenderer()
+        table.columnModel.getColumn(2).cellRenderer = TextAreaRenderer()
 
         val sorter = TableRowSorter(tableModel)
         table.rowSorter = sorter
@@ -138,7 +141,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         }
 
         for (col in 0 until table.columnCount) {
-            if (col == 1) {
+            if (col == 1 || col == 2) {
                 table.columnModel.getColumn(col).cellRenderer = ThickTextAreaRenderer()
             } else {
                 table.columnModel.getColumn(col).cellRenderer = ThickBorderCellRenderer()
@@ -216,8 +219,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 }
             }
         })
-        table.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
+        //table.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
         table.columnModel.getColumn(1).preferredWidth = 500
+        table.columnModel.getColumn(2).preferredWidth = 500
         table.fillsViewportHeight = true
 
         val scrollPane = JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED)
@@ -336,7 +340,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             text = value?.toString() ?: ""
             setSize(table.columnModel.getColumn(column).width, preferredSize.height)
 
-            if (table.getRowHeight(row) != preferredSize.height) {
+            if (table.getRowHeight(row) != preferredSize.height && table.getRowHeight(row) <= preferredSize.height) {
                 table.setRowHeight(row, preferredSize.height)
             }
 
@@ -400,7 +404,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
     companion object {
         fun adjustColumnWidths(table: JTable) {
             for (col in 0 until table.columnCount) {
-                if (col != 1 && col != 8 && col != 9) {
+                if (col != 1 && col != 2 && col != 8 && col != 9) {
                     val column = table.columnModel.getColumn(col)
                     val minWidth = getTextWidth(table, column.headerValue.toString(), table.font)
                     var maxWidth = minWidth

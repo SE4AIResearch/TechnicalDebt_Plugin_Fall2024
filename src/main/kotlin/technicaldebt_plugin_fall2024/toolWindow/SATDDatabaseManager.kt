@@ -108,13 +108,14 @@ class SATDDatabaseManager {
 
                     while (rs.next()) {
                         val satd_id = rs.getInt("satd_id")
-                        val f_comment = rs.getString("v2_comment")
+                        val f_comment1 = rs.getString("v1_comment")
+                        val f_comment2 = rs.getString("v2_comment")
                         val containing_class = rs.getString("v2_class")
                         val containing_method = rs.getString("v2_method")
                         val resolution = rs.getString("resolution")
                         val refactoring = rs.getString("refactoring")
 
-                        val rowKey = "$satd_id|$f_comment|$containing_class|$containing_method"
+                        val rowKey = "$satd_id|$f_comment1|$f_comment2|$containing_class|$containing_method"
                         if (seenRows.contains(rowKey)) {
                             continue // Skip duplicate
                         }
@@ -125,7 +126,8 @@ class SATDDatabaseManager {
                         tableModel.addRow(
                             arrayOf(
                                 satd_id,
-                                f_comment,
+                                f_comment1,
+                                f_comment2,
                                 containing_class,
                                 containing_method,
                                 resolution,
