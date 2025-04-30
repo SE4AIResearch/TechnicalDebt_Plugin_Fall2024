@@ -117,7 +117,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val tableModel = object : DefaultTableModel(){
             override fun isCellEditable(row: Int, column: Int): Boolean = false
         }
-        tableModel.addColumn("SATD ID")
+        tableModel.addColumn("File ID")
         tableModel.addColumn("Comment")
         tableModel.addColumn("Containing Class")
         tableModel.addColumn("Containing Method")
@@ -199,6 +199,22 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
                     val editor = getCurrentEditor(project)
 
+                    val element = editor?.let { PsiUtilBase.getElementAtCaret(it) }
+                    val method = element?.let { PsiTreeUtil.getParentOfType(it, PsiNameIdentifierOwner::class.java) }
+                    val actualMethodName = method?.name
+                    println(method?.name)
+                    var expectedMethodName = table.getValueAt(row, 3) as String
+                    expectedMethodName = expectedMethodName.substringBefore("(").trim()
+
+                    if (actualMethodName != null && actualMethodName != expectedMethodName) {
+                        Messages.showErrorDialog(
+                                project,
+                                "The SATD method name \"$expectedMethodName\" doesn't match the current method name \"$actualMethodName\". The database entry might be outdated.",
+                                "Method Mismatch Detected"
+                        )
+                    }
+
+
                     val document = editor?.document
                     val selectionModel = editor?.selectionModel
                     val selectedText = selectionModel?.selectedText
@@ -229,16 +245,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             }
         })
 
-        table.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
-        table.columnModel.getColumn(1).preferredWidth = 500
-        table.fillsViewportHeight = true
-
-        val scrollPane = JBScrollPane(
-            table,
-            JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
-        )
-
+        val scrollPane = JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED)
+        scrollPane.preferredSize = Dimension(900, 250)
         scrollPane.setBorder(
             BorderFactory.createLineBorder(Color.BLACK, /*thickness=*/1)
         );
