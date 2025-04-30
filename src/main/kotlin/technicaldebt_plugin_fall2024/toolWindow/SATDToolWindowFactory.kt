@@ -216,6 +216,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 }
             }
         })
+        table.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
+        table.columnModel.getColumn(1).preferredWidth = 500
+        table.fillsViewportHeight = true
 
         val scrollPane = JBScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED)
         scrollPane.preferredSize = Dimension(900, 250)
@@ -273,12 +276,12 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             add(object : AnAction("Fetch SATD", "Load the SATD records into the table", AllIcons.Actions.Refresh) {
                 override fun actionPerformed(e: AnActionEvent) {
                     ProgressManager.getInstance().runProcessWithProgressSynchronously(
-                            {
-                                satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, project)
-                            },
-                            "Fetching SATD Data",
-                            false,
-                            project
+                        {
+                            satdDatabaseManager.initializeAndConnectDatabase(tableModel, label, table, project)
+                        },
+                        "Fetching SATD Data",
+                        false,
+                        project
                     )
                 }
             })
@@ -323,12 +326,12 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         }
 
         override fun getTableCellRendererComponent(
-                table: JTable,
-                value: Any?,
-                isSelected: Boolean,
-                hasFocus: Boolean,
-                row: Int,
-                column: Int
+            table: JTable,
+            value: Any?,
+            isSelected: Boolean,
+            hasFocus: Boolean,
+            row: Int,
+            column: Int
         ): Component {
             text = value?.toString() ?: ""
             setSize(table.columnModel.getColumn(column).width, preferredSize.height)
