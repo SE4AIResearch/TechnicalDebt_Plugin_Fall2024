@@ -7,11 +7,28 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.psi.*
+import com.intellij.psi.PsiManager
+import com.intellij.psi.util.PsiTreeUtil
 import java.io.*
 import java.util.stream.Collectors
 
 class SATDFileManager {
-    fun navigateToCode(project: Project, lineNumber: Int?, path: String): Boolean {
+    fun parseMethodSignature(signature: String): Pair<String, List<String>> {
+        val nameEndIndex = signature.indexOf('(')
+        val methodName = signature.substring(0, nameEndIndex).trim()
+        val paramString = signature.substring(nameEndIndex + 1, signature.indexOf(')')).trim()
+
+        val paramTypes = if (paramString.isEmpty()) {
+            emptyList()
+        } else {
+            paramString.split(',').map { it.trim() }
+        }
+
+        return Pair(methodName, paramTypes)
+    }
+
+    fun navigateToCode(project: Project, methodName: String?, path: String): Boolean {
         val homePath = project.basePath
         val fullPath = "$homePath/$path"
         val file = LocalFileSystem.getInstance().findFileByPath(fullPath)
@@ -29,10 +46,26 @@ class SATDFileManager {
             return false
         }
         val caretModel = editor.caretModel
-        if (lineNumber != null) {
-            if (lineNumber > 0 && lineNumber <= editor.document.lineCount) {
-                caretModel.moveToLogicalPosition(LogicalPosition(lineNumber - 1, 0))
-                editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+        if (methodName != null) {
+            val psiFile = PsiManager.getInstance(project).findFile(file)
+            if (psiFile != null) {
+                val methods = PsiTreeUtil.findChildrenOfType(psiFile, PsiMethod::class.java)
+                val (parsedName, parsedParams) = parseMethodSignature(methodName)
+                val method = methods.find { m ->
+                    m.name == parsedName &&
+                            m.parameterList.parametersCount == parsedParams.size &&
+                            m.parameterList.parameters.map { it.type.presentableText } == parsedParams
+                }
+                if (method != null) {
+                    val offset = method.textOffset
+                    val logicalPosition = editor.offsetToLogicalPosition(offset)
+                    editor.caretModel.moveToLogicalPosition(logicalPosition)
+                    editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+                    return true
+                } else {
+                    Messages.showErrorDialog("Method '$methodName' not found in file", "")
+                    return false
+                }
             }
         }
         return true
