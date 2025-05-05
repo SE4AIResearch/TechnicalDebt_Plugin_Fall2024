@@ -175,7 +175,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
                 }
                 else if (e.clickCount == 2){
-                    val jumped = satdFileManager.navigateToCode(project, l1, filePath)
+                    var expectedMethodName = table.getValueAt(row, 4) as String
+                    val jumped = satdFileManager.navigateToCode(project, expectedMethodName, filePath)
 
                     if (jumped){
                         //ActionManager.getInstance().getAction("Send to LLM").templatePresentation.isEnabled = true
@@ -190,7 +191,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                     val method = element?.let { PsiTreeUtil.getParentOfType(it, PsiNameIdentifierOwner::class.java) }
                     val actualMethodName = method?.name
                     println(method?.name)
-                    var expectedMethodName = table.getValueAt(row, 3) as String
+
                     expectedMethodName = expectedMethodName.substringBefore("(").trim()
 
                     if (isJumpedToMethod && actualMethodName != null && actualMethodName != expectedMethodName) {
