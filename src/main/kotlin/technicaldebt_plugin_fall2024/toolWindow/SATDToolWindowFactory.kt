@@ -63,6 +63,7 @@ private fun getLineTextRange(document: Document, editor: Editor): TextRange {
 class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
     private val satdFileManager = SATDFileManager()
     private val satdDatabaseManager = SATDDatabaseManager()
+    private var isJumpedToMethod = false
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow, ) {
         var selectedFileId: Int? = null
@@ -180,15 +181,36 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 //                    resolutionLabel.text = "Resolution:[${satdInfo.resolution}]"
 //                    refactoringLabel.text = "Refactoring: [${satdInfo.refactoring}]"
 
+                    isJumpedToMethod = false
                     table.setRowSelectionInterval(row, row)
 
                 }
                 else if (e.clickCount == 2){
-                    satdFileManager.navigateToCode(project, l1, filePath)
+                    val jumped = satdFileManager.navigateToCode(project, l1, filePath)
+
+                    if (jumped){
+                        //ActionManager.getInstance().getAction("Send to LLM").templatePresentation.isEnabled = true
+                        isJumpedToMethod = true
+                    }
+                    //satdFileManager.navigateToCode(project, l1, filePath)
 
                     //invoke
 
                     val editor = getCurrentEditor(project)
+                    val element = editor?.let { PsiUtilBase.getElementAtCaret(it) }
+                    val method = element?.let { PsiTreeUtil.getParentOfType(it, PsiNameIdentifierOwner::class.java) }
+                    val actualMethodName = method?.name
+                    println(method?.name)
+                    var expectedMethodName = table.getValueAt(row, 3) as String
+                    expectedMethodName = expectedMethodName.substringBefore("(").trim()
+
+                    if (isJumpedToMethod && actualMethodName != null && actualMethodName != expectedMethodName) {
+                        Messages.showErrorDialog(
+                            project,
+                            "The SATD method name \"$expectedMethodName\" doesn't match the current method name \"$actualMethodName\". The database entry might be outdated.",
+                            "Method Mismatch Detected"
+                        )
+                    }
 
                     val document = editor?.document
                     val selectionModel = editor?.selectionModel
@@ -272,7 +294,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                         } else {
                             SortOrder.ASCENDING
                         }
-                        sorter.setSortKeys(listOf(RowSorter.SortKey(currentKey.column, newOrder)))
+                        sorter.setSortKeys(listOf(RowSorter.SortKey(0, newOrder)))
                     }
                 }
             })
@@ -293,7 +315,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             add(object : AnAction("Send to LLM", "Send selected code to LLM", AllIcons.RunConfigurations.Remote) {
                 override fun update(e: AnActionEvent) {
                     val editor = getCurrentEditor(project)
-                    e.presentation.isEnabled = editor?.selectionModel?.hasSelection() == true && selectedFileId != null
+                    val selectionModel = editor?.selectionModel
+                    e.presentation.isEnabled = isJumpedToMethod && selectionModel?.hasSelection() == true
                 }
 
                 override fun actionPerformed(e: AnActionEvent) {
