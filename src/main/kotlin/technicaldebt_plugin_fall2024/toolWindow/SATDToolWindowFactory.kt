@@ -68,20 +68,14 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow, ) {
         var selectedFileId: Int? = null
         val toolWindowPanel = JPanel(BorderLayout())
-//        val tabbedPane = JTabbedPane()
 
         val label = JBLabel("Retrieve the latest SATD data: ")
 
 
         val pathLabel = JLabel("Path to SATD: ")
         val linesLabel = JBLabel("Lines: [,]")
-//        val resolutionLabel = JBLabel("Resolution: []")
-//        val refactoringLabel = JBLabel("Refactoring: []")
 
         val bottomPanel = JPanel(BorderLayout())
-
-
-
 
         // info on the left
         val leftPanel = JPanel(GridBagLayout())
@@ -99,11 +93,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             anchor = GridBagConstraints.EAST
             insets = JBUI.insets(5, 10)
         }
-//        rightPanel.add(resolutionLabel, rightConstraints)
-//        rightConstraints.gridx = 1
-//        rightPanel.add(refactoringLabel, rightConstraints)
-//        rightConstraints.gridx = 2
-
 
 
         // Add left and right subpanels to bottom panel
