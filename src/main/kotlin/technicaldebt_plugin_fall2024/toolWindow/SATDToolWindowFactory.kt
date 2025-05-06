@@ -194,40 +194,41 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
                     expectedMethodName = expectedMethodName.substringBefore("(").trim()
 
-                    if (isJumpedToMethod && actualMethodName != null && actualMethodName != expectedMethodName) {
-                        Messages.showErrorDialog(
-                            project,
-                            "The SATD method name \"$expectedMethodName\" doesn't match the current method name \"$actualMethodName\". The database entry might be outdated.",
-                            "Method Mismatch Detected"
-                        )
-                    }
-
-                    val document = editor?.document
-                    val selectionModel = editor?.selectionModel
-                    val selectedText = selectionModel?.selectedText
-                    if (selectedText != null) {
-                        val textRange = TextRange.create(selectionModel.selectionStart, selectionModel.selectionEnd)
-//                        transform(project, selectedText, editor, textRange)
-                        // We don't want to transform just yet
-                    } else {
-                        val namedElement = editor?.let { getParentNamedElement(it) }
-                        if (namedElement != null) {
-                            val queryText = namedElement.text
-                            val textRange = namedElement.textRange
-                            selectionModel?.setSelection(textRange.startOffset, textRange.endOffset)
-//                            transform(project, queryText, editor, textRange)
+                    if (isJumpedToMethod) {
+                        if (actualMethodName != null && actualMethodName != expectedMethodName) {
+                            Messages.showErrorDialog(
+                                project,
+                                "The SATD method name \"$expectedMethodName\" doesn't match the current method name \"$actualMethodName\". The database entry might be outdated.",
+                                "Method Mismatch Detected"
+                            )
                         } else {
-                            selectionModel?.selectLineAtCaret()
-                            val textRange = editor?.let {
-                                if (document != null) {
-                                    getLineTextRange(document, it)
+                            // Only highlight if jump was successful and method names match
+                            val document = editor?.document
+                            val selectionModel = editor?.selectionModel
+                            val selectedText = selectionModel?.selectedText
+                            if (selectedText != null) {
+                                val textRange = TextRange.create(selectionModel.selectionStart, selectionModel.selectionEnd)
+                                // transform(project, selectedText, editor, textRange)
+                            } else {
+                                val namedElement = editor?.let { getParentNamedElement(it) }
+                                if (namedElement != null) {
+                                    val queryText = namedElement.text
+                                    val textRange = namedElement.textRange
+                                    selectionModel?.setSelection(textRange.startOffset, textRange.endOffset)
+                                    // transform(project, queryText, editor, textRange)
+                                } else {
+                                    selectionModel?.selectLineAtCaret()
+                                    val textRange = editor?.let {
+                                        if (document != null) {
+                                            getLineTextRange(document, it)
+                                        }
+                                    }
+                                    // transform(project, document.getText(textRange), editor, textRange)
                                 }
                             }
-//                            transform(project, document.getText(textRange), editor, textRange)
                         }
-
-
                     }
+
                 }
             }
         })
