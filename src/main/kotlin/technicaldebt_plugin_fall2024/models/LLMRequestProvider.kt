@@ -7,8 +7,8 @@ import com.technicaldebt_plugin_fall2024.models.ollama.OllamaRequest
 import com.technicaldebt_plugin_fall2024.models.openai.*
 import com.technicaldebt_plugin_fall2024.settings.LLMSettingsManager
 import com.intellij.openapi.diagnostic.Logger
-import com.technicaldebt_plugin_fall2024.settings.LLMSettingsManager.LLMProvider
 import technicaldebt_plugin_fall2024.models.MockCompletionRequests
+import technicaldebt_plugin_fall2024.settings.LLMProvider
 
 
 /**
@@ -26,7 +26,7 @@ private const val GEMINI = "gemini-2.0-flash"
 
 //val CodexRequestProvider = LLMRequestProvider(CODEX_COMPLETION_MODEL, CODEX_EDIT_MODEL, CHAT_GPT_3_5_TURBO)
 
-private val MODEL = LLMSettingsManager.LLMProvider.OLLAMA.toString()
+private val MODEL = LLMProvider.OLLAMA.toString()
 
 val GPTRequestProvider = LLMRequestProvider(CHAT_GPT_3_5_TURBO)
 val OllamaRequestProvider = LLMRequestProvider(MODEL)
@@ -38,7 +38,7 @@ public class LLMRequestProvider(
 
 
     fun createRequest(prompt: String, settings: LLMSettingsManager): LLMBaseRequest<*> {
-        return when (settings.provider) {
+        return when (settings.getProvider()) {
 
             LLMProvider.OPENAI -> {
                 println("Using OpenAI with prompt: $prompt")

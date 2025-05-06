@@ -2,6 +2,7 @@ package technicaldebt_plugin_fall2024.actions
 
 //import com.technicaldebt_plugin_fall2024.models.CodexRequestProvider
 //import com.technicaldebt_plugin_fall2024.models.sendEditRequest
+import technicaldebt_plugin_fall2024.settings.LLMProvider
 import com.intellij.openapi.ui.Messages
 import com.intellij.ide.plugins.PluginManagerCore.logger
 import com.technicaldebt_plugin_fall2024.models.*
@@ -26,6 +27,7 @@ import java.awt.EventQueue.invokeLater
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.openapi.editor.Document
+import technicaldebt_plugin_fall2024.settings.LLMSettings
 
 abstract class LLMActivator(): IntentionAction {
     companion object{
@@ -71,8 +73,8 @@ abstract class LLMActivator(): IntentionAction {
                             var response2: LLMBaseResponse? = null
 
 
-                            when (settings.provider) {
-                                LLMSettingsManager.LLMProvider.GEMINI -> {
+                            when (settings.getProvider()) {
+                                LLMProvider.GEMINI -> {
                                     val provider = GeminiRequestProvider
                                     val messages = listOf(
                                             GeminiChatMessage(role = "user", content = prompt ),
@@ -99,7 +101,7 @@ abstract class LLMActivator(): IntentionAction {
 
 //                            print("Here: $response")
                                 }
-                                LLMSettingsManager.LLMProvider.OLLAMA -> {
+                                LLMProvider.OLLAMA -> {
                                     val provider = OllamaRequestProvider
 
                                     val ollama = OllamaBody(provider.chatModel, prompt)
@@ -120,7 +122,7 @@ abstract class LLMActivator(): IntentionAction {
                                 }
 
 
-                                LLMSettingsManager.LLMProvider.OPENAI -> {
+                                LLMProvider.OPENAI -> {
                                     val provider = GPTRequestProvider
 
 
