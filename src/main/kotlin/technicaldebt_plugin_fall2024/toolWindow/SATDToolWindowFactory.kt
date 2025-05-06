@@ -145,6 +145,9 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
 
+        var currResolution: String? = null
+
+
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 val row = table.rowAtPoint(e.point)
@@ -156,6 +159,8 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 var satdType: String? = null
 
                 val satdInfo = satdDatabaseManager.getSATDTableInfo(project, fileId)
+                currResolution = satdInfo.resolution!!
+
 
                 filePath = satdInfo.filePath!!
                 l1 = satdInfo.startLine!!
@@ -316,11 +321,12 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                     val selectedText = selectionModel.selectedText ?: return
                     val textRange = TextRange(selectionModel.selectionStart, selectionModel.selectionEnd)
 
-                    val satdInfo = satdDatabaseManager.getSATDTableInfo(project, selectedFileId!!)
-                    val satdType = satdInfo.resolution
+                    val satdType = currResolution
+
 
                     LLMActivator.transform(project, selectedText, editor, textRange, satdType)
-                    ToolWindowManager.getInstance(project).getToolWindow("LLM Output")?.show(null)
+                    val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("LLM Output")
+                    toolWindow?.show(null)
                 }
             })
 
