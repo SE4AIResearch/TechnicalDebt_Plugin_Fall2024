@@ -130,8 +130,8 @@ abstract class ApplyTransformationIntention(
                     }
                     var response:LLMBaseResponse? =    null
 
-                    when (settings.provider) {
-                        LLMSettingsManager.LLMProvider.GEMINI -> {
+                    when (settings.getProvider()) {
+                        LLMProvider.GEMINI -> {
                             val provider = GeminiRequestProvider
                             val messages = listOf(
                                     GeminiChatMessage(role = "user", content = prompt ),
@@ -146,7 +146,7 @@ abstract class ApplyTransformationIntention(
 
 //                            print("Here: $response")
                         }
-                        LLMSettingsManager.LLMProvider.OLLAMA -> {
+                        LLMProvider.OLLAMA -> {
                             val provider = OllamaRequestProvider
 
                             val ollama = OllamaBody(provider.chatModel, prompt)
@@ -157,7 +157,7 @@ abstract class ApplyTransformationIntention(
                                     llmRequestProvider = provider
                             )
                         }
-                        LLMSettingsManager.LLMProvider.OPENAI -> {
+                        LLMProvider.OPENAI -> {
                             val provider = GPTRequestProvider
 
 

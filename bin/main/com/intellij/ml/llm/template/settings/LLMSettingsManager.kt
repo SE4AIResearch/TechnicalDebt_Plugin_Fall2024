@@ -10,9 +10,7 @@ import com.intellij.util.xmlb.annotations.OptionTag
     storages = [Storage(value = "llm.for.code.xml", roamingType = RoamingType.DISABLED, exportable = true)]
 )
 class LLMSettingsManager : PersistentStateComponent<LLMSettings> {
-    enum class LLMProvider {
-        OPENAI, OLLAMA, GEMINI
-    }
+
 
     var provider: LLMProvider = LLMProvider.OPENAI
 //    var openAiKey: String = ""

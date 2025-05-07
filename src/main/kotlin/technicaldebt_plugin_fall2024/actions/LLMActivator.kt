@@ -2,6 +2,7 @@ package technicaldebt_plugin_fall2024.actions
 
 //import com.technicaldebt_plugin_fall2024.models.CodexRequestProvider
 //import com.technicaldebt_plugin_fall2024.models.sendEditRequest
+import technicaldebt_plugin_fall2024.settings.LLMProvider
 import com.intellij.openapi.ui.Messages
 import com.intellij.ide.plugins.PluginManagerCore.logger
 import com.technicaldebt_plugin_fall2024.models.*
@@ -26,6 +27,7 @@ import java.awt.EventQueue.invokeLater
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.openapi.editor.Document
+import technicaldebt_plugin_fall2024.settings.LLMSettings
 
 abstract class LLMActivator(): IntentionAction {
     companion object{
@@ -40,16 +42,16 @@ abstract class LLMActivator(): IntentionAction {
         }
 
         fun transform(
-                project: Project,
-                text: String,
-                editor: Editor,
-                textRange: TextRange,
-                satdType: String
+            project: Project,
+            text: String,
+            editor: Editor,
+            textRange: TextRange,
+            satdType: String?
         ) {
 
             val settings = LLMSettingsManager.getInstance()
 
-            if (satdType.isEmpty()) {
+            if (satdType.isNullOrEmpty()) {
                 Messages.showWarningDialog(
                         project,
                         "SATD type not detected. Please ensure your code contains valid SATD.",
@@ -65,21 +67,14 @@ abstract class LLMActivator(): IntentionAction {
                     object : Task.Backgroundable(project, LLMBundle.message("intentions.request.background.process.title")) {
                         override fun run(indicator: ProgressIndicator) {
 
-                            var prompt = ""
-                            if(satdType.isNotEmpty())
-                            {
-                                prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'."
-                            }
-                            else
-                            {
-                                prompt = "No SATDType provided. Output raw code fixing the following issue: {$text}. Do NOT include any formatting delimiters such as '`'."
-                            }
+                            val prompt = "This code has SATDType {$satdType}. Output raw code fixing the SATDType: {$text}. Do NOT include any formatting delimiters such as '`'."
+
                             var response1: LLMBaseResponse? = null
                             var response2: LLMBaseResponse? = null
 
 
-                            when (settings.provider) {
-                                LLMSettingsManager.LLMProvider.GEMINI -> {
+                            when (settings.getProvider()) {
+                                LLMProvider.GEMINI -> {
                                     val provider = GeminiRequestProvider
                                     val messages = listOf(
                                             GeminiChatMessage(role = "user", content = prompt ),
@@ -106,7 +101,7 @@ abstract class LLMActivator(): IntentionAction {
 
 //                            print("Here: $response")
                                 }
-                                LLMSettingsManager.LLMProvider.OLLAMA -> {
+                                LLMProvider.OLLAMA -> {
                                     val provider = OllamaRequestProvider
 
                                     val ollama = OllamaBody(provider.chatModel, prompt)
@@ -127,7 +122,7 @@ abstract class LLMActivator(): IntentionAction {
                                 }
 
 
-                                LLMSettingsManager.LLMProvider.OPENAI -> {
+                                LLMProvider.OPENAI -> {
                                     val provider = GPTRequestProvider
 
 

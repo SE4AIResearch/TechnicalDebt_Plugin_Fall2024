@@ -30,17 +30,10 @@
 
         <applicationConfigurable
                 groupId="tools"
-                instance="com.technicaldebt_plugin_fall2024.settings.LLMConfigurable"
+                instance="com.technicaldebt_plugin_fall2024.settings.TechnicalDebtToolConfigurable"
                 id="ml.llm.LLMConfigurable"
                 bundle="messages.LLMBundle"
                 key="settings.configurable.display.name"/>
-
-        <applicationConfigurable
-                groupId="tools"
-                instance="technicaldebt_plugin_fall2024.settings.git.GitHubConfigurable"
-                id="ml.github.credentials"
-                displayName="Technical Debt: Github Credentials"
-        />
 
         <applicationConfigurable
                 groupId="ml.llm.LLMConfigurable"
@@ -48,12 +41,6 @@
                 id="ml.llm.openai.AdvancedConfigurable"
                 bundle="messages.LLMBundle"
                 key="settings.configurable.openai.advanced.display.name"/>
-
-        <intentionAction>
-            <className>com.technicaldebt_plugin_fall2024.intentions.ApplyCustomEditIntention</className>
-            <bundleName>messages.LLMBundle</bundleName>
-            <categoryKey>intention.category.codex</categoryKey>
-        </intentionAction>
 
         <toolWindow id="LLM Output" anchor="right" factoryClass="technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow"/>
 

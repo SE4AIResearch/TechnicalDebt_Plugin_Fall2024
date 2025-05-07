@@ -35,7 +35,7 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
     override fun createPanel(): DialogPanel {
         return panel {
 
-            lateinit var providerComboBox: Cell<ComboBox<LLMSettingsManager.LLMProvider>>
+            lateinit var providerComboBox: Cell<ComboBox<LLMProvider>>
 
             openAiKeyRow = row(LLMBundle.message("settings.configurable.openai.key.label")) {
 
@@ -65,9 +65,9 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
 
             row(LLMBundle.message("settings.configurable.llm.provider.label")) {
                 providerComboBox = comboBox(
-                    DefaultComboBoxModel(LLMSettingsManager.LLMProvider.values())
+                    DefaultComboBoxModel(LLMProvider.values())
                 ).bindItem(
-                    {settings.provider},
+                    {settings.getProvider()},
                     {value ->
                         if (value != null) {
                             settings.updateProvider(value)
@@ -85,9 +85,9 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
     }
 
     fun updateVisibility() {
-        val isGemini = settings.provider == LLMSettingsManager.LLMProvider.GEMINI
-        val isOpenAi = settings.provider == LLMSettingsManager.LLMProvider.OPENAI
-        val isOllama = settings.provider == LLMSettingsManager.LLMProvider.OLLAMA
+        val isGemini = settings.getProvider() == LLMProvider.GEMINI
+        val isOpenAi = settings.getProvider() == LLMProvider.OPENAI
+        val isOllama = settings.getProvider() == LLMProvider.OLLAMA
         geminiAiKeyRow.visible(isGemini)
         openAiKeyRow.visible(isOpenAi)
         openAiOrgRow.visible(isOpenAi)
