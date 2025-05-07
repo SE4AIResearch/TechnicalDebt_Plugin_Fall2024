@@ -5,7 +5,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ScrollType
-import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.TextAttributes
@@ -26,6 +25,25 @@ import java.awt.*
 import java.awt.datatransfer.StringSelection
 import javax.swing.*
 import javax.swing.border.LineBorder
+import com.intellij.ui.JBColor
+import com.intellij.util.ui.UIUtil
+import com.intellij.openapi.editor.ex.EditorEx
+import com.intellij.openapi.editor.colors.EditorColors
+import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.editor.colors.EditorColorsScheme
+import com.intellij.openapi.editor.colors.ColorKey
+import org.jetbrains.kotlin.idea.KotlinLanguage
+import com.intellij.openapi.fileTypes.PlainTextLanguage
+import com.intellij.openapi.fileTypes.LanguageFileType
+import com.intellij.openapi.fileTypes.FileType
+import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.PsiManager
+import com.intellij.testFramework.LightVirtualFile
+
+
+
+
 
 class LLMOutputToolWindow : ToolWindowFactory {
     companion object {
@@ -44,23 +62,38 @@ class LLMOutputToolWindow : ToolWindowFactory {
 
         fun updateOutput(text1: String, text2: String, editor: Editor, project: Project, textRange: TextRange) {
             SwingUtilities.invokeLater {
-                editorField1?.setText(text1)
-                editorField1?.revalidate()
-                editorField1?.repaint()
-                editorField1?.parent?.revalidate()
-                editorField1?.parent?.repaint()
+                fun adjustEditorField(editorField: EditorTextField?, content: String) {
+                    editorField?.setText(content)
 
-                editorField2?.setText(text2)
-                editorField2?.revalidate()
-                editorField2?.repaint()
-                editorField2?.parent?.revalidate()
-                editorField2?.parent?.repaint()
+                    val lines = content.lines().size.coerceAtLeast(3)
+                    val lineHeight = editorField?.editor?.lineHeight ?: 20
+                    val preferredHeight = lines * lineHeight + 20
+
+                    if (editorField != null) {
+                        editorField?.preferredSize = Dimension(editorField.width, preferredHeight)
+                    }
+                    if (editorField != null) {
+                        editorField?.minimumSize = Dimension(editorField.width, preferredHeight)
+                    }
+                    if (editorField != null) {
+                        editorField?.maximumSize = Dimension(editorField.width, preferredHeight)
+                    }
+                    editorField?.revalidate()
+                    editorField?.repaint()
+                    editorField?.parent?.revalidate()
+                    editorField?.parent?.repaint()
+                }
+
+                adjustEditorField(editorField1, text1)
+                adjustEditorField(editorField2, text2)
             }
+
             llmRequested = true
             latestEditor = editor
             latestProject = project
             latestTextRange = textRange
         }
+
 
         private fun applyChanges() {
             val editor = latestEditor
@@ -103,7 +136,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
         val endOffset = document.getLineEndOffset(lineNumber)
 
         val highlightAttributes = TextAttributes().apply {
-            backgroundColor = Color.YELLOW
+            backgroundColor = JBColor.YELLOW
         }
 
         editor.markupModel.addRangeHighlighter(
@@ -126,18 +159,32 @@ class LLMOutputToolWindow : ToolWindowFactory {
     }
 
     private fun createCodeEditor(project: Project): EditorTextField {
-        val factory = EditorFactory.getInstance()
-        val document = factory.createDocument("fun main() {\n    println(\"LLM Output Will be Displayed Here!\")\n}")
-        val fileType = FileTypeManager.getInstance().getFileTypeByExtension("java")
+        val codeSample = ""
 
-        return EditorTextField(document, project, fileType, false, false).apply {
-            (this.editor as? EditorEx)?.apply {
-                settings.isLineNumbersShown = true
-                settings.isIndentGuidesShown = true
-                settings.isFoldingOutlineShown = true
+        val language = KotlinLanguage.INSTANCE
+        val fileType = language.associatedFileType ?: FileTypeManager.getInstance().getFileTypeByExtension("kt")
+
+        val virtualFile = LightVirtualFile("Fake.kt", fileType, codeSample)
+        val psiFile = PsiManager.getInstance(project).findFile(virtualFile)
+        val document = PsiDocumentManager.getInstance(project).getDocument(psiFile!!)!!
+
+        return EditorTextField(document, project, fileType, false, true).apply {
+            setOneLineMode(false)
+            addSettingsProvider {
+
+                editorEx ->
+                setOneLineMode(false)
+                editorEx.settings.apply {
+                    isLineNumbersShown = true
+                    isIndentGuidesShown = true
+                    isFoldingOutlineShown = false
+                    isRightMarginShown = false
+                }
             }
         }
     }
+
+
 
     fun createButtonPanel(buttonSize: Dimension, editorField: EditorTextField): JPanel {
         return JPanel(FlowLayout(FlowLayout.RIGHT, 2, 0)).apply {
@@ -150,7 +197,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
                     val selection = StringSelection(editorField?.text ?: "")
                     clipboard.setContents(selection, selection)
-                    background = Color.LIGHT_GRAY
+                    background = UIUtil.getPanelBackground()
                     isContentAreaFilled = true
                     SwingUtilities.invokeLater {
                         Thread.sleep(200)
@@ -180,12 +227,14 @@ class LLMOutputToolWindow : ToolWindowFactory {
             wrapStyleWord = true
             isEditable = false
             border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
-            background = panel.background
+            background = UIUtil.getPanelBackground()
+            foreground = UIUtil.getLabelForeground()
         }
+
 
         val scrollPane = JScrollPane(descriptionTextArea).apply {
             preferredSize = Dimension(300, 100)
-            border = BorderFactory.createLineBorder(Color.GRAY, 1)
+            border = BorderFactory.createLineBorder(JBColor.border(), 1)
             horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
         }
 
@@ -207,7 +256,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
             isContentAreaFilled = false
             isFocusPainted = false
             border = BorderFactory.createEmptyBorder()
-            background = Color.GRAY
+            background = JBColor.BLUE
             preferredSize = Dimension(20, 20)
         }
 
@@ -217,21 +266,21 @@ class LLMOutputToolWindow : ToolWindowFactory {
             isContentAreaFilled = false
             isFocusPainted = false
             border = BorderFactory.createEmptyBorder()
-            background = Color.GRAY
+            background = JBColor.GRAY
             preferredSize = Dimension(20, 20)
         }
 
         selectButton1.addActionListener {
             if (!editor1Selected) {
                 selectButton1.background = Color.BLUE
-                selectButton2.background = Color.GRAY
+                selectButton2.background = JBColor.border()
                 editorField1?.border = BorderFactory.createLineBorder(Color.BLUE)
                 editorField2?.border = BorderFactory.createEmptyBorder()
                 editor1Selected = true
                 editor2Selected = false
                 if (llmRequested) applyButton?.isEnabled = true
             } else {
-                selectButton1.background = Color.GRAY
+                selectButton1.background = JBColor.border()
                 editorField1?.border = BorderFactory.createEmptyBorder()
                 editor1Selected = false
                 applyButton?.isEnabled = false
@@ -241,14 +290,14 @@ class LLMOutputToolWindow : ToolWindowFactory {
         selectButton2.addActionListener {
             if (!editor2Selected) {
                 selectButton2.background = Color.BLUE
-                selectButton1.background = Color.GRAY
+                selectButton1.background = JBColor.border()
                 editorField2?.border = BorderFactory.createLineBorder(Color.BLUE)
                 editorField1?.border = BorderFactory.createEmptyBorder()
                 editor2Selected = true
                 editor1Selected = false
                 if (llmRequested) applyButton?.isEnabled = true
             } else {
-                selectButton2.background = Color.GRAY
+                selectButton2.background = JBColor.border()
                 editorField2?.border = BorderFactory.createEmptyBorder()
                 editor2Selected = false
                 applyButton?.isEnabled = false
@@ -274,10 +323,9 @@ class LLMOutputToolWindow : ToolWindowFactory {
             val buttonSize = Dimension(30, 30)
 
             llmLabel = JLabel("Active LLM: ${settings.getProvider()}").apply {
-                font = font.deriveFont(Font.BOLD, 16f)
-                horizontalAlignment = SwingConstants.CENTER
-                border = BorderFactory.createEmptyBorder(10, 0, 10, 0)
+                foreground = UIUtil.getLabelForeground()
             }
+
 
             val combinedTopPanel = JPanel(BorderLayout()).apply {
                 add(llmLabel, BorderLayout.NORTH)
@@ -311,6 +359,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                     val runButton = JButton("Run", TechnicalDebtIcons.run).apply {
                         toolTipText = "Execute the current file"
                         isFocusPainted = false
+                        preferredSize = Dimension(100, 30)
                         margin = Insets(5, 15, 5, 15)
                         addActionListener {
                             editor1Selected = true
@@ -358,6 +407,7 @@ class LLMOutputToolWindow : ToolWindowFactory {
                     val editor = latestEditor
                     val runButton = JButton("Run", TechnicalDebtIcons.run).apply {
                         toolTipText = "Execute the current file"
+                        preferredSize = Dimension(100, 30)
                         isFocusPainted = false
                         margin = Insets(5, 15, 5, 15)
                         addActionListener {

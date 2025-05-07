@@ -2,6 +2,7 @@ package com.technicaldebt_plugin_fall2024.ui
 
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
@@ -14,6 +15,7 @@ import java.net.URI
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 import javax.swing.event.HyperlinkEvent
+import com.intellij.util.ui.UIUtil
 
 class DescriptionTab(private val project: Project?) {
     private val titlePanel = JPanel(BorderLayout()).apply {
@@ -53,7 +55,9 @@ class DescriptionTab(private val project: Project?) {
     private fun makeTextPane(contentProvider: () -> String): JTextPane =
         JTextPane().apply {
             isEditable = false
-            isOpaque = false
+            isOpaque = true
+            background = UIManager.getColor("EditorPane.background") ?: UIUtil.getPanelBackground()
+            foreground = UIManager.getColor("EditorPane.foreground") ?: UIUtil.getLabelForeground()
             contentType = "text/html"
             addHyperlinkListener { e ->
                 if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
@@ -66,6 +70,7 @@ class DescriptionTab(private val project: Project?) {
             }
             text = contentProvider()
         }
+
 
     private fun makeButton(label: String, icon: Icon, action: () -> Unit): JButton =
         JButton(label, icon).apply {
@@ -80,18 +85,20 @@ class DescriptionTab(private val project: Project?) {
     private fun makeInfoCard(title: String, content: JComponent): JPanel =
         JPanel(BorderLayout()).apply {
             border = BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color(200, 200, 200), 1), // 🔳 Light gray line
-                BorderFactory.createEmptyBorder(10, 10, 20, 10)           // Padding inside the border
+                BorderFactory.createLineBorder(JBColor.border(), 1),
+                BorderFactory.createEmptyBorder(10, 10, 20, 10)
             )
-            background = Color(250, 250, 250) // Optional: light background for card contrast
+            background = UIUtil.getPanelBackground()
 
             add(JLabel(title).apply {
                 font = Font("Segoe UI", Font.BOLD, 16)
+                foreground = UIUtil.getLabelForeground()
                 border = BorderFactory.createEmptyBorder(0, 0, 8, 0)
             }, BorderLayout.NORTH)
 
             add(content, BorderLayout.CENTER)
         }
+
 
 
     private fun makeButtonPanel(): JPanel =
@@ -106,17 +113,15 @@ class DescriptionTab(private val project: Project?) {
     private fun wrapButton(button: JButton): JPanel =
         JPanel(BorderLayout()).apply {
             border = BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color(180, 180, 180), 1),
+                BorderFactory.createLineBorder(JBColor.border(), 1),
                 BorderFactory.createEmptyBorder(5, 10, 5, 10)
             )
-            background = Color(245, 245, 245)
-
-            // Constrain the panel size to tightly wrap the button
+            background = UIUtil.getPanelBackground()
             maximumSize = Dimension(button.preferredSize.width + 20, button.preferredSize.height + 10)
             alignmentX = Component.LEFT_ALIGNMENT
-
             add(button, BorderLayout.WEST)
         }
+
 
 
 

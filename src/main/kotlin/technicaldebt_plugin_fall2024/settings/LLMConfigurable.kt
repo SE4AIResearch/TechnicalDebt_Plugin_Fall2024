@@ -59,10 +59,10 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
 
             ollamaModelRow = row("Ollama Model:") {
                 comboBox(
-                        DefaultComboBoxModel(arrayOf("llama2", "deepseek"))
+                    DefaultComboBoxModel(arrayOf("llama2", "deepseek"))
                 ).bindItem(
-                        { settings.ollamaModel },
-                        { settings.ollamaModel = it ?: "llama2" }
+                    { settings.ollamaModel },
+                    { settings.ollamaModel = it ?: "llama2" }
                 ).apply {
                     component.toolTipText = "Choose a model like llama2 or deepseek"
                 }
@@ -72,7 +72,7 @@ class LLMConfigurable : BoundConfigurable(LLMBundle.message("settings.configurab
 
             geminiAiKeyRow = row(LLMBundle.message("settings.configurable.gemini.key.label")) {
                 passwordField().bindText(
-                        settings::getGeminiKey, settings::setGeminiKey
+                    settings::getGeminiKey, settings::setGeminiKey
                 )
             }
 
