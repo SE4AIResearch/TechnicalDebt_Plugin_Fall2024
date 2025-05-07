@@ -14,7 +14,6 @@ Key features include:
 IntelliJ Versions Supported:
 2023.3 - 2025.1
 
-To keep everything working, do not remove `<!-- ... -->` sections. 
 <!-- Plugin description end -->
 
 ## Installation
