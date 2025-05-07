@@ -14,6 +14,7 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.lang</depends>
+    <depends>org.jetbrains.kotlin</depends>
     <depends>com.intellij.java</depends>
     <resource-bundle>messages.MyBundle</resource-bundle>
 
@@ -35,12 +36,6 @@
                 bundle="messages.LLMBundle"
                 key="settings.configurable.display.name"/>
 
-        <applicationConfigurable
-                groupId="ml.llm.LLMConfigurable"
-                instance="com.technicaldebt_plugin_fall2024.settings.openai.AdvancedSettingsConfigurable"
-                id="ml.llm.openai.AdvancedConfigurable"
-                bundle="messages.LLMBundle"
-                key="settings.configurable.openai.advanced.display.name"/>
 
         <toolWindow id="LLM Output" anchor="right" factoryClass="technicaldebt_plugin_fall2024.ui.LLMOutputToolWindow"/>
 

@@ -20,7 +20,6 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -46,12 +45,10 @@ fun getCurrentEditor(project: Project): Editor? {
     return FileEditorManager.getInstance(project).selectedTextEditor
 }
 
-
 private fun getParentNamedElement(editor: Editor): PsiNameIdentifierOwner? {
     val element = PsiUtilBase.getElementAtCaret(editor)
     return PsiTreeUtil.getParentOfType(element, PsiNameIdentifierOwner::class.java)
 }
-
 
 private fun getLineTextRange(document: Document, editor: Editor): TextRange {
     val lineNumber = document.getLineNumber(editor.caretModel.offset)
@@ -65,12 +62,11 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
     private val satdDatabaseManager = SATDDatabaseManager()
     private var isJumpedToMethod = false
 
-    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow, ) {
+    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         var selectedFileId: Int? = null
         val toolWindowPanel = JPanel(BorderLayout())
 
         val label = JBLabel("Retrieve the latest SATD data: ")
-
 
         val pathLabel = JLabel("Path to SATD: ")
         val linesLabel = JBLabel("Lines: [,]")
@@ -94,7 +90,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             insets = JBUI.insets(5, 10)
         }
 
-
         // Add left and right subpanels to bottom panel
         bottomPanel.add(leftPanel, BorderLayout.WEST)
         bottomPanel.add(rightPanel, BorderLayout.EAST)
@@ -102,7 +97,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         // Now add this combined bottom panel to the main toolWindowPanel
         toolWindowPanel.add(bottomPanel, BorderLayout.SOUTH)
 
-        val tableModel = object : DefaultTableModel(){
+        val tableModel = object : DefaultTableModel() {
             override fun isCellEditable(row: Int, column: Int): Boolean = false
         }
         tableModel.addColumn("SATD ID")
@@ -147,11 +142,11 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
         var currResolution: String? = null
 
-
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 val row = table.rowAtPoint(e.point)
                 val fileId = table.getValueAt(row, 0) as Int
+                selectedFileId = fileId
 
                 var filePath: String? = null
                 var l1: Int? = null
@@ -159,37 +154,25 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                 var satdType: String? = null
 
                 val satdInfo = satdDatabaseManager.getSATDTableInfo(project, fileId)
-                currResolution = satdInfo.resolution!!
+                currResolution = satdInfo.resolution
 
-
-                filePath = satdInfo.filePath!!
-                l1 = satdInfo.startLine!!
-                l2 = satdInfo.endLine!!
+                filePath = satdInfo.filePath
+                l1 = satdInfo.startLine
+                l2 = satdInfo.endLine
                 satdType = satdInfo.resolution
 
-
                 if (e.clickCount == 1) {
-
                     pathLabel.text = "Path to SATD: $filePath   "
                     linesLabel.text = "Lines: [$l1, $l2]"
-//                    resolutionLabel.text = "Resolution:[${satdInfo.resolution}]"
-//                    refactoringLabel.text = "Refactoring: [${satdInfo.refactoring}]"
-
                     isJumpedToMethod = false
                     table.setRowSelectionInterval(row, row)
-
-                }
-                else if (e.clickCount == 2){
+                } else if (e.clickCount == 2) {
                     var expectedMethodName = table.getValueAt(row, 4) as String
-                    val jumped = satdFileManager.navigateToCode(project, expectedMethodName, filePath)
+                    val jumped = filePath?.let { satdFileManager.navigateToCode(project, expectedMethodName, it) }
 
-                    if (jumped){
-                        //ActionManager.getInstance().getAction("Send to LLM").templatePresentation.isEnabled = true
+                    if (jumped == true) {
                         isJumpedToMethod = true
                     }
-                    //satdFileManager.navigateToCode(project, l1, filePath)
-
-                    //invoke
 
                     val editor = getCurrentEditor(project)
                     val element = editor?.let { PsiUtilBase.getElementAtCaret(it) }
@@ -207,37 +190,21 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
                                 "Method Mismatch Detected"
                             )
                         } else {
-                            // Only highlight if jump was successful and method names match
-                            val document = editor?.document
                             val selectionModel = editor?.selectionModel
-                            val selectedText = selectionModel?.selectedText
-                            if (selectedText != null) {
-                                val textRange = TextRange.create(selectionModel.selectionStart, selectionModel.selectionEnd)
-                                // transform(project, selectedText, editor, textRange)
+                            val namedElement = editor?.let { getParentNamedElement(it) }
+                            if (namedElement != null) {
+                                val queryText = namedElement.text
+                                val textRange = namedElement.textRange
+                                selectionModel?.setSelection(textRange.startOffset, textRange.endOffset)
                             } else {
-                                val namedElement = editor?.let { getParentNamedElement(it) }
-                                if (namedElement != null) {
-                                    val queryText = namedElement.text
-                                    val textRange = namedElement.textRange
-                                    selectionModel?.setSelection(textRange.startOffset, textRange.endOffset)
-                                    // transform(project, queryText, editor, textRange)
-                                } else {
-                                    selectionModel?.selectLineAtCaret()
-                                    val textRange = editor?.let {
-                                        if (document != null) {
-                                            getLineTextRange(document, it)
-                                        }
-                                    }
-                                    // transform(project, document.getText(textRange), editor, textRange)
-                                }
+                                selectionModel?.selectLineAtCaret()
                             }
                         }
                     }
-
                 }
             }
         })
-        //table.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
+
         table.columnModel.getColumn(1).preferredWidth = 500
         table.columnModel.getColumn(2).preferredWidth = 500
         table.fillsViewportHeight = true
@@ -246,7 +213,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         scrollPane.preferredSize = Dimension(900, 250)
         scrollPane.border = BorderFactory.createEmptyBorder(5, 10, 10, 10)
         toolWindowPanel.add(scrollPane, BorderLayout.CENTER)
-
 
         // Start mining SATD here
         val testRepo = PathManager.getPluginsPath() + "/TechnicalDebt_Plugin_Fall2024/SATDBailiff/test_repo.csv"
@@ -265,7 +231,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             if (db.createNewFile()) {
                 satdDatabaseManager.initialize(label, project.name)
             } else {
-                val message = "Loading existing SATD data for this  project. May not include most recent commits. Click \"Fetch SATD Data\" to update data"
+                val message = "Loading existing SATD data for this project. May not include most recent commits. Click \"Fetch SATD Data\" to update data"
                 Messages.showWarningDialog(message, "")
                 satdDatabaseManager.loadDatabase(tableModel, label, table, project.name)
             }
@@ -276,14 +242,11 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         val actionGroup = DefaultActionGroup().apply {
             add(object : AnAction("Reverse Order", "Reverse the current table order", AllIcons.RunConfigurations.SortbyDuration) {
                 override fun actionPerformed(e: AnActionEvent) {
-                    // Get current sort keys
                     val currentKeys = table.rowSorter?.sortKeys
 
                     if (currentKeys.isNullOrEmpty()) {
-                        // If no sorting is applied, sort by the first column in descending order
                         sorter.setSortKeys(listOf(RowSorter.SortKey(0, SortOrder.DESCENDING)))
                     } else {
-                        // Toggle the sort order of the current sort column
                         val currentKey = currentKeys[0]
                         val newOrder = if (currentKey.sortOrder == SortOrder.ASCENDING) {
                             SortOrder.DESCENDING
@@ -323,14 +286,11 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
 
                     val satdType = currResolution
 
-
                     LLMActivator.transform(project, selectedText, editor, textRange, satdType)
                     val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("LLM Output")
                     toolWindow?.show(null)
                 }
             })
-
-
         }
 
         val toolbar = ActionManager.getInstance().createActionToolbar("SATDToolbar", actionGroup, true)
@@ -347,6 +307,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             lineWrap = true
             wrapStyleWord = true
             isOpaque = true
+            isEditable = false
         }
 
         override fun getTableCellRendererComponent(
@@ -369,6 +330,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             return this
         }
     }
+
     class ThickTextAreaRenderer : TextAreaRenderer() {
         override fun getTableCellRendererComponent(
             table: JTable, value: Any?, isSelected: Boolean,
@@ -376,7 +338,6 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
         ): Component {
             val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column) as JComponent
 
-            // Outer border is now 1px; inner padding remains.
             val thinBorder = BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK)
             val padding = BorderFactory.createEmptyBorder(5, 5, 5, 5)
             comp.border = BorderFactory.createCompoundBorder(thinBorder, padding)
@@ -421,6 +382,7 @@ class SATDToolWindowFactory : ToolWindowFactory, DumbAware {
             return comp
         }
     }
+
     companion object {
         fun adjustColumnWidths(table: JTable) {
             for (col in 0 until table.columnCount) {
