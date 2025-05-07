@@ -5,7 +5,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
-import com.technicaldebt_plugin_fall2024.showUnauthorizedGitNotification
+import showUnauthorizedGitNotification
 import technicaldebt_plugin_fall2024.toolWindow.SATDToolWindowFactory.Companion.adjustColumnWidths
 import technicaldebt_plugin_fall2024.AuthorizationException
 import java.io.File

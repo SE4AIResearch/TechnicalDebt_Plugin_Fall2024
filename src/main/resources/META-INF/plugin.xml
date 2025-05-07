@@ -30,7 +30,7 @@
 
         <applicationConfigurable
                 groupId="tools"
-                instance="com.technicaldebt_plugin_fall2024.settings.TechnicalDebtToolConfigurable"
+                instance="technicaldebt_plugin_fall2024.settings.TechnicalDebtToolConfigurable"
                 id="ml.llm.LLMConfigurable"
                 bundle="messages.LLMBundle"
                 key="settings.configurable.display.name"/>

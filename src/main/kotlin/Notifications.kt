@@ -1,12 +1,9 @@
-package com.technicaldebt_plugin_fall2024
-
-import com.technicaldebt_plugin_fall2024.settings.openLLMSettingsDialog
+import technicaldebt_plugin_fall2024.settings.openTechnicalDebtToolSettingsDialog
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
-import technicaldebt_plugin_fall2024.settings.git.openGitHubSettingsDialog
 
 private fun createNotificationGroup(): NotificationGroup {
     return NotificationGroupManager.getInstance().getNotificationGroup("Technical Debt group")
@@ -21,7 +18,7 @@ internal fun showUnauthorizedNotification(project: Project) {
 
     val action = LLMBundle.message("notification.unauthorized.key.not.provided.action")
     notification.addAction(NotificationAction.createSimple(action) {
-        openLLMSettingsDialog(project)
+        openTechnicalDebtToolSettingsDialog(project)
         notification.expire()
     })
     notification.notify(project)
@@ -36,7 +33,7 @@ internal fun showAuthorizationFailedNotification(project: Project) {
 
     val action = LLMBundle.message("notification.unauthorized.key.not.provided.action")
     notification.addAction(NotificationAction.createSimple(action) {
-        openLLMSettingsDialog(project)
+        openTechnicalDebtToolSettingsDialog(project)
         notification.expire()
     })
     notification.notify(project)
@@ -60,7 +57,7 @@ internal fun showUnauthorizedGitNotification(project: Project, missingCredential
 
     val action = "Configure GitHub Credentials"
     notification.addAction(NotificationAction.createSimple(action) {
-        openGitHubSettingsDialog(project)
+        openTechnicalDebtToolSettingsDialog(project)
         notification.expire()
     })
     notification.notify(project)

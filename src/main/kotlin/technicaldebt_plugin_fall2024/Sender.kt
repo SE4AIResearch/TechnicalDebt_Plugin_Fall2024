@@ -9,9 +9,9 @@ import com.technicaldebt_plugin_fall2024.models.ollama.OllamaBody
 import com.technicaldebt_plugin_fall2024.models.openai.OpenAiChatMessage
 import com.technicaldebt_plugin_fall2024.models.openai.OpenAiChatRequestBody
 import com.technicaldebt_plugin_fall2024.settings.LLMSettingsManager
-import com.technicaldebt_plugin_fall2024.showAuthorizationFailedNotification
-import com.technicaldebt_plugin_fall2024.showRequestFailedNotification
-import com.technicaldebt_plugin_fall2024.showUnauthorizedNotification
+import showAuthorizationFailedNotification
+import showRequestFailedNotification
+import showUnauthorizedNotification
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.util.io.HttpRequests

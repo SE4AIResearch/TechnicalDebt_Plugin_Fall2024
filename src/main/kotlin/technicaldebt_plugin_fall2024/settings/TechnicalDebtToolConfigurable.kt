@@ -1,11 +1,13 @@
-package com.technicaldebt_plugin_fall2024.settings
+package technicaldebt_plugin_fall2024.settings
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
+import com.intellij.openapi.options.ShowSettingsUtil
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.*
+import com.technicaldebt_plugin_fall2024.settings.LLMSettingsManager
 import technicaldebt_plugin_fall2024.settings.git.GitHubSettingsManager
-import technicaldebt_plugin_fall2024.settings.LLMProvider
 import javax.swing.DefaultComboBoxModel
 
 class TechnicalDebtToolConfigurable :
@@ -75,15 +77,11 @@ class TechnicalDebtToolConfigurable :
                     textField()
                         .bindText(githubSettings::getGitHubUsername, githubSettings::setGitHubUsername)
                 }
-                row("GitHub Token") {
+                row("GitHub Personal Access Token (PAT):") {
                     passwordField()
                         .bindText(githubSettings::getGitHubToken, githubSettings::setGitHubToken)
-                        .comment("Create a token at https://github.com/settings/tokens")
+                    browserLink("Generate PAT here", "https://github.com/settings/tokens")
                 }
-            }
-
-            onApply {
-                // Optional: Validate or trigger updates
             }
 
             onReset {
@@ -102,4 +100,11 @@ class TechnicalDebtToolConfigurable :
         ollamaServerRow.visible(provider == LLMProvider.OLLAMA)
         ollamaModelRow.visible(provider == LLMProvider.OLLAMA)
     }
+
+
+
+}
+
+fun openTechnicalDebtToolSettingsDialog(project: Project?) {
+    ShowSettingsUtil.getInstance().showSettingsDialog(project, TechnicalDebtToolConfigurable::class.java)
 }

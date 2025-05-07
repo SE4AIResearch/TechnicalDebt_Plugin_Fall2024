@@ -5,8 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.JBUI
-import com.technicaldebt_plugin_fall2024.settings.LLMConfigurable
-import com.technicaldebt_plugin_fall2024.settings.TechnicalDebtToolConfigurable
+import technicaldebt_plugin_fall2024.settings.TechnicalDebtToolConfigurable
 import technicaldebt_plugin_fall2024.ui.PluginLabelsBundle
 import technicaldebt_plugin_fall2024.ui.TechnicalDebtIcons
 import java.awt.*
@@ -27,9 +26,6 @@ class DescriptionTab(private val project: Project?) {
     private val pluginDescription = makeTextPane { getCommonDescriptionText(content.preferredSize.width) }
     private val llmDescription = makeTextPane { getLLMDescriptionText(content.preferredSize.width) }
 
-    private val llmSettingsButton = makeButton(PluginLabelsBundle.get("llmSettingsLink"), TechnicalDebtIcons.settings) {
-        ShowSettingsUtil.getInstance().showSettingsDialog(project, LLMConfigurable::class.java)
-    }
 
     private val settingsButton = makeButton(PluginLabelsBundle.get("settingsLink"), TechnicalDebtIcons.settings) {
         ShowSettingsUtil.getInstance().showSettingsDialog(project, TechnicalDebtToolConfigurable::class.java)
@@ -94,29 +90,32 @@ class DescriptionTab(private val project: Project?) {
         }
 
 
-    private fun makeButtonPanel(): JPanel =
-        JPanel().apply {
+    private fun makeButtonPanel(): JPanel {
+        val maxWidth = maxOf(settingsButton.preferredSize.width, documentationButton.preferredSize.width) + 20
+        val buttonHeight = settingsButton.preferredSize.height + 10
+
+        return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             border = JBUI.Borders.empty(10)
-            add(wrapButton(settingsButton))
+            add(wrapButton(settingsButton, maxWidth, buttonHeight))
             add(Box.createVerticalStrut(20))
-            add(wrapButton(documentationButton))
+            add(wrapButton(documentationButton, maxWidth, buttonHeight))
         }
+    }
 
-    private fun wrapButton(button: JButton): JPanel =
+    private fun wrapButton(button: JButton, width: Int, height: Int): JPanel =
         JPanel(BorderLayout()).apply {
             border = BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color(180, 180, 180), 1),
                 BorderFactory.createEmptyBorder(5, 10, 5, 10)
             )
             background = Color(245, 245, 245)
-
-            // Constrain the panel size to tightly wrap the button
-            maximumSize = Dimension(button.preferredSize.width + 20, button.preferredSize.height + 10)
+            maximumSize = Dimension(width, height)
+            preferredSize = Dimension(width, height)
             alignmentX = Component.LEFT_ALIGNMENT
-
-            add(button, BorderLayout.WEST)
+            add(button, BorderLayout.CENTER)
         }
+
 
 
 
