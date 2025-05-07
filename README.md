@@ -1,5 +1,4 @@
 # SATD Tool Plugin
-![Build](https://github.com/SE4AIResearch/TechnicalDebt_Plugin_Fall2024/workflows/Build/badge.svg)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
 
 
