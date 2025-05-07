@@ -50,7 +50,7 @@ mv Ollama.app /Applications/
 ```
 
 ### Windows
-
+(Video Link: https://youtu.be/-ow4-7YdzNc)
 ```bash
 # Download and run the installer from
 # https://ollama.com/download/OllamaSetup.exe
