@@ -35,6 +35,7 @@ IntelliJ Versions Supported:
   Download the [latest release](https://github.com/SE4AIResearch/TechnicalDebt_Plugin_Fall2024/releases/latest) and install it manually using
   <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
 
+  (Youtube Tutorial: https://www.youtube.com/watch?v=pxGuN2tD4Dk)
 ---
 
 
