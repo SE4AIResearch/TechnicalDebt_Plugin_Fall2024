@@ -58,7 +58,7 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
 
-    implementation("org.xerial:sqlite-jdbc:3.36.0.3")
+    implementation("org.xerial:sqlite-jdbc:3.50.2.0")
     implementation(files("lib/satd_detector.jar"))
     implementation("com.github.hullbend:mt-java:1.0.5")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
